@@ -1,0 +1,43 @@
+= `repackage-tests-maven-plugin`
+
+This Maven plugin makes it possible to run tests from third party test jars outside their original source tree.
+
+== The problem
+
+Say that a third party project publishes their test-jars on Maven Central and you want to run their tests as a part of
+your own build in a fully independent source tree.
+
+You hope to make that possible by adding those test-jars as a dependency in the module where you want to run the included
+tests. But you will find our soon that Surefire/Failsafe Maven plugin cannot run those tests seamlessly. The build will
+most probably fail due to dependencies missing in the class path of the executed tests. Closer look will reveal that the
+missing dependencies are exactly the ones having the test scope in the POM of the test module of the third party
+project. This is caused by the fact that Maven, by design, doed not (transitively) pull test dependencies for you - see
+https://issues.apache.org/jira/browse/MNG-1378
+
+There are several solutions to this problem.
+
+== The "ban test scope" solution
+
+Simply removing `<scope>test</scope>` from all dependencies on the side of the third party project would make your build
+work. It is rather unlikely that the third party project will be ready to do this for you.
+
+== The "split tests from the test app" solution
+
+Another solution (on the third party project side) is to put the test classes into `src/main/java` directory of a separate
+Maven module. Good luck with asking the third party project to do this for you.
+
+== "Synthetic tests modules" solution
+
+That's what the `repackage-tests-maven-plugin` implements. The plugin takes the POMs of test-jars and does the following modifications with them:
+
+* Renames the module by appending `-tests` to the original artifactId
+* Removes all non-test dependencies
+* Removes the test scope from every remaining dependency
+* Adds the dependency on the original artifact (without the `-tests` suffix)
+
+The resulting `pom.xml` files are then installed along with the original test-jars into the local Maven repository. And
+your module in which you'd like to run them can seamlessly use them as dependencies.
+
+== Configuration
+
+See this example: https://github.com/ppalaga/repackage-tests-maven-plugin/blob/master/src/it/repackage-and-install-test-jars/pom.xml#L49
