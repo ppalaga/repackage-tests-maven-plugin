@@ -21,7 +21,7 @@
 
   <groupId>org.l2x6.rpkgtests</groupId>
   <artifactId>repackage-tests-maven-plugin</artifactId>
-  <version>0.2.0</version>
+  <version>0.2.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Repackage Tests Maven Plugin</name>
@@ -53,7 +53,7 @@
     <connection>scm:git:git@github.com:ppalaga/repackage-tests-maven-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:ppalaga/repackage-tests-maven-plugin.git</developerConnection>
     <url>https://github.com/ppalaga/repackage-tests-maven-plugin</url>
-    <tag>0.2.0</tag>
+    <tag>head</tag>
   </scm>
   <issueManagement>
     <system>GitHub Issues</system>
