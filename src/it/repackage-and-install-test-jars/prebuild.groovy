@@ -14,4 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-println "localRepositoryPath = "+ localRepositoryPath
+
+import java.nio.file.Path;
+import java.nio.file.Files;
+
+final Path localRepoRoot = localRepositoryPath.toPath()
+
+Files.deleteIfExists(localRepoRoot.resolve('org/apache/camel/quarkus/camel-quarkus-jdbc/0.2.0/camel-quarkus-jdbc-0.2.0.pom'))
+Files.deleteIfExists(localRepoRoot.resolve('org/apache/camel/quarkus/camel-quarkus-jdbc/0.2.0/camel-quarkus-jdbc-0.2.0-tests.jar'))
+
+return true;

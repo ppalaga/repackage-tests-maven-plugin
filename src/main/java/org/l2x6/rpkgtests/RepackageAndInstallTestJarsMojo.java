@@ -16,26 +16,19 @@
  */
 package org.l2x6.rpkgtests;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -45,8 +38,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -57,8 +50,16 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.twdata.maven.mojoexecutor.MojoExecutor;
-import org.twdata.maven.mojoexecutor.MojoExecutor.Element;
+import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.shared.transfer.artifact.ArtifactCoordinate;
+import org.apache.maven.shared.transfer.artifact.DefaultArtifactCoordinate;
+import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResult;
+import org.apache.maven.shared.transfer.dependencies.DefaultDependableCoordinate;
+import org.apache.maven.shared.transfer.dependencies.DependableCoordinate;
+import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
+import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolverException;
+import org.apache.maven.shared.transfer.repository.RepositoryManager;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -66,11 +67,48 @@ import org.w3c.dom.NodeList;
 @Mojo(name = "repackage-and-install-test-jars", requiresDependencyResolution = ResolutionScope.NONE, defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
 
+    /** A collection of {@link Artifact}s representing test-jars which should be processed by this mojo.
+     * <p>
+     * An example:
+     * <pre>
+     * {@code
+     * <testJars>
+     *   <testJar>
+     *     <!-- The transformed test-jar artifact
+     *          will be installed as
+     *          org.myorg:my-artifact-tests:1.2.3
+     *          in the local Maven repository -->
+     *     <groupId>org.myorg</groupId>
+     *     <artifactId>my-artifact</artifactId>
+     *     <version>1.2.3</version>
+     *   </testJar>
+     * </testJars>
+     * }
+     * </pre>
+     */
     @Parameter(property = "rpkgtests.testJars")
     private List<Artifact> testJars;
 
-    @Parameter(property = "rpkgtests.downloadDir", defaultValue = "${project.build.directory}/rpkgtests-downloads")
-    private File downloadDir;
+    /** The directory where this mojo stores its temporary files */
+    @Parameter(property = "rpkgtests.workDir", defaultValue = "${project.build.directory}/rpkgtests")
+    private File workDir;
+
+    /**
+     * If {@code true} the mojo donwloads, transforms and installs all {@link #testJars} even if some or all of them are
+     * installed already. Otherwise, if an artifact with the transformed name is available in the local Maven
+     * repository, the mojo does nothing for that particular artifact.
+     *
+     * {@link #force} is implictly {@code true} for all {@link #testJars} having version ending with {@code -SNAPSHOT}.
+     */
+    @Parameter(property = "rpkgtests.force", defaultValue = "false")
+    private boolean force;
+
+    /** If {@code true} the mojo does nothing; othewise it does its business as usual. */
+    @Parameter(property = "rpkgtests.skip", defaultValue = "false")
+    private boolean skip;
+
+    @Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true, required = true)
+    private List<ArtifactRepository> pomRemoteRepositories;
 
     @Component
     private MavenProject project;
@@ -81,40 +119,64 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
     @Component
     private BuildPluginManager pluginManager;
 
+    @Component
+    private DependencyResolver dependencyResolver;
+
+    @Component
+    protected RepositoryManager repositoryManager;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        if (skip) {
+            getLog().info("Skipping as requested via the skip mojo parameter");
+        }
         if (testJars != null && !testJars.isEmpty()) {
-            download();
-            try {
-                final List<InstallableArtifact> installables = transform();
-                install(installables);
-            } catch (XPathExpressionException | TransformerException | IOException e) {
-                throw new MojoExecutionException("Could not perform repackage-and-install-test-jars", e);
+            for (Artifact artifact : testJars) {
+                final LocalRepoArtifact localRepoArtifact = createLocalRepoArtifact(artifact);
+                if (force || !localRepoArtifact.installed || artifact.version.endsWith("-SNAPSHOT")) {
+                    download(localRepoArtifact);
+                    final InstallableArtifact installable = transform(localRepoArtifact);
+                    install(installable);
+                }
             }
         }
     }
 
-    private void install(List<InstallableArtifact> installables) throws MojoExecutionException {
-        final Plugin installPlugin = managedPlugin("org.apache.maven.plugins", "maven-install-plugin", "3.0.0-M1", project);
-        for (InstallableArtifact installable : installables) {
-            executeMojo(
-                    installPlugin,
-                    goal("install-file"),
-                    configuration(
-                        element("pomFile", installable.pomPath.toString()),
-                        element("version", installable.artifact.version),
-                        element("file", installable.jarPath.toString())
-                    ),
-                    executionEnvironment(
-                        project,
-                        session,
-                        pluginManager
-                    )
-                );
+    private LocalRepoArtifact createLocalRepoArtifact(Artifact artifact) {
+        final ProjectBuildingRequest request = session.getProjectBuildingRequest();
+        final Path repoRoot = repositoryManager.getLocalRepositoryBasedir(request).toPath();
 
+        final Path newJarPath = repoRoot.resolve(repositoryManager.getPathForLocalArtifact(request,
+                artifact.asNewCoordinate("jar")));
+        final Path newPomPath = repoRoot.resolve(repositoryManager.getPathForLocalArtifact(request,
+                artifact.asNewCoordinate("pom")));
+        final Path oldJarPath = repoRoot.resolve(repositoryManager.getPathForLocalArtifact(request,
+                artifact.asOldCoordinate("jar", "tests")));
+        final Path oldPomPath = repoRoot.resolve(repositoryManager.getPathForLocalArtifact(request,
+                artifact.asOldCoordinate("pom", null)));
+
+        final LocalRepoArtifact localRepoArtifact = new LocalRepoArtifact(artifact,
+                Files.exists(newJarPath) && Files.exists(newPomPath), newJarPath, newPomPath, oldJarPath, oldPomPath);
+        return localRepoArtifact;
+    }
+
+    private void install(InstallableArtifact installable) throws MojoExecutionException {
+        try {
+            Files.createDirectories(installable.local.newLocalRepoJarPath.getParent());
+            Files.copy(installable.local.oldLocalRepoJarPath, installable.local.newLocalRepoJarPath);
+        } catch (IOException e) {
+            throw new RuntimeException(
+                    "Could not copy from " + installable.local.oldLocalRepoJarPath + " to " + installable.local.newLocalRepoJarPath, e);
+        }
+        try {
+            Files.createDirectories(installable.local.newLocalRepoPomPath.getParent());
+            Files.copy(installable.sourcePomPath, installable.local.newLocalRepoPomPath);
+        } catch (IOException e) {
+            throw new RuntimeException(
+                    "Could not copy from " + installable.sourcePomPath + " to " + installable.local.newLocalRepoPomPath, e);
         }
     }
+
     /**
      * A generator of XPath 1.0 "any namespace" selector, such as
      * {@code /*:[local-name()='foo']/*:[local-name()='bar']}. In XPath 2.0, this would be just {@code /*:foo/*:bar},
@@ -130,30 +192,33 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
         }
         return sb.toString();
     }
+
     static Node textElement(Document document, String elementName, String value) {
         final Node result = document.createElement(elementName);
         result.appendChild(document.createTextNode(value));
         return result;
     }
 
-    private List<InstallableArtifact> transform() throws TransformerException, IOException, XPathExpressionException {
+    private InstallableArtifact transform(LocalRepoArtifact localRepoArtifact) {
+        final Artifact artifact = localRepoArtifact.artifact;
 
-        final List<InstallableArtifact> installables = new ArrayList<>(testJars.size());
-
-        final Transformer t = TransformerFactory.newInstance().newTransformer();
-        final XPath xPath = XPathFactory.newInstance().newXPath();
-        for (Artifact artifact : testJars) {
+        try {
+            final Transformer t = TransformerFactory.newInstance().newTransformer();
+            final XPath xPath = XPathFactory.newInstance().newXPath();
             getLog().warn("Transforming " + artifact);
-            final Path pomPath = downloadDir.toPath().resolve(artifact.artifactId + "-" + artifact.version + ".pom");
-            final Path jarPath = downloadDir.toPath().resolve(artifact.artifactId + "-" + artifact.version + "-tests.jar");
+            final Path pomPath = localRepoArtifact.oldLocalRepoPomPath;
             final DOMResult result = new DOMResult();
             try (Reader r = Files.newBufferedReader(pomPath)) {
                 t.transform(new StreamSource(r), result);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not read " + pomPath, e);
+            } catch (TransformerException e) {
+                throw new RuntimeException("Could not transform to DOM: " + pomPath, e);
             }
             final Document doc = (Document) result.getNode();
             final Node artifactNode = (Node) xPath.evaluate(anyNs("project", "artifactId"), doc, XPathConstants.NODE);
             final String oldArtifactId = artifactNode.getTextContent();
-            final String newArtifactId = oldArtifactId + "-tests";
+            final String newArtifactId = newArtifactId(oldArtifactId);
             artifactNode.setTextContent(newArtifactId);
 
             final Node nameNode = (Node) xPath.evaluate(anyNs("project", "name"), doc, XPathConstants.NODE);
@@ -163,7 +228,8 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
 
             remove(xPath, anyNs("project", "description"), doc);
 
-            final NodeList deps = (NodeList) xPath.evaluate(anyNs("project", "dependencies", "dependency"), doc, XPathConstants.NODESET);
+            final NodeList deps = (NodeList) xPath.evaluate(anyNs("project", "dependencies", "dependency"), doc,
+                    XPathConstants.NODESET);
             for (int i = 0; i < deps.getLength(); i++) {
                 final Node dep = deps.item(i);
                 final Node scope = (Node) xPath.evaluate(anyNs("scope"), dep, XPathConstants.NODE);
@@ -190,14 +256,25 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
             remove(xPath, anyNs("project", "build"), doc);
             remove(xPath, anyNs("project", "profiles"), doc);
 
-            final Path testsPom = downloadDir.toPath().resolve(newArtifactId + "-" + artifact.version + ".pom");
+            final Path testsPom = workDir.toPath().resolve(newArtifactId + "-" + artifact.version + ".pom");
+            Files.createDirectories(testsPom.getParent());
             try (Writer w = Files.newBufferedWriter(testsPom)) {
                 t.transform(new DOMSource(doc), new StreamResult(w));
+            } catch (IOException e) {
+                throw new RuntimeException("Could not write " + testsPom, e);
+            } catch (TransformerException e) {
+                throw new RuntimeException("Could not serialize DOM: " + testsPom, e);
             }
-            installables.add(new InstallableArtifact(artifact, testsPom, jarPath));
+            return new InstallableArtifact(localRepoArtifact, testsPom);
+        } catch (TransformerConfigurationException | XPathExpressionException | DOMException
+                | TransformerFactoryConfigurationError | IOException e) {
+            throw new RuntimeException("Could not transform " + artifact, e);
         }
-        return installables;
 
+    }
+
+    private static String newArtifactId(final String oldArtifactId) {
+        return oldArtifactId + "-tests";
     }
 
     private void remove(XPath xPath, String xPathExpression, Document doc) throws XPathExpressionException {
@@ -207,69 +284,96 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
         }
     }
 
-    private void download() throws MojoExecutionException {
-        final Plugin depPlugin = managedPlugin("org.apache.maven.plugins", "maven-dependency-plugin", "3.1.1", project);
+    private void download(LocalRepoArtifact localRepoArtifact) throws MojoFailureException {
 
-        final List<Element> artifactItems = new ArrayList<>();
-        for (Artifact artifact : testJars) {
-            getLog().warn("Copying " + artifact);
-            artifactItems.add(artifact(artifact, null, "pom"));
-            artifactItems.add(artifact(artifact, "tests", "test-jar"));
-        }
-
-        executeMojo(
-                depPlugin,
-                goal("copy"),
-                configuration(
-                    element("outputDirectory", downloadDir.getAbsolutePath()),
-                    element("artifactItems", new MojoExecutor.Attributes(), artifactItems.toArray(new Element[artifactItems.size()]))
-                ),
-                executionEnvironment(
-                    project,
-                    session,
-                    pluginManager
-                )
-            );
-    }
-
-    private Element artifact(Artifact artifact, String classifier,  String type) {
-        final List<Element> elems = new ArrayList<>(Arrays.asList(
-                element("groupId", artifact.groupId),
-                element("artifactId", artifact.artifactId),
-                element("version", artifact.version),
-                element("type", type),
-                element("overWrite", "true"))
-        );
-        if (classifier != null) {
-            elems.add(element("classifier", classifier));
-        }
-        return element("artifactItem", new MojoExecutor.Attributes(), elems.toArray(new Element[elems.size()]));
-    }
-
-    Plugin managedPlugin(String groupId, String artifactId, String defaultVersion, MavenProject project) {
-        for (Plugin p : project.getBuild().getPlugins()) {
-            if (groupId.equals(p.getGroupId()) && artifactId.equals(p.getArtifactId())) {
-                return plugin(groupId, artifactId, p.getVersion());
+        try {
+            Iterable<ArtifactResult> resolvedArtifacts = dependencyResolver.resolveDependencies(
+                    session.getProjectBuildingRequest(), localRepoArtifact.artifact.asOldCoordinate(), null);
+            boolean jarDownloaded = false;
+            for (ArtifactResult ar : resolvedArtifacts) {
+                if (ar.getArtifact().getFile().toPath().equals(localRepoArtifact.oldLocalRepoJarPath)) {
+                    jarDownloaded = true;
+                    break;
+                }
             }
+            if (!jarDownloaded) {
+                throw new IllegalStateException("Could not assert that " + localRepoArtifact.artifact
+                        + ":jar was downloaded as " + localRepoArtifact.oldLocalRepoJarPath);
+            }
+        } catch (DependencyResolverException e) {
+            throw new MojoFailureException("Could not download " + localRepoArtifact.artifact, e);
         }
-        return plugin(groupId, artifactId, defaultVersion);
+
+    }
+
+    public static class LocalRepoArtifact {
+
+        private final Artifact artifact;
+        private final boolean installed;
+        private final Path newLocalRepoJarPath;
+        private final Path newLocalRepoPomPath;
+        private final Path oldLocalRepoJarPath;
+        private final Path oldLocalRepoPomPath;
+
+        public LocalRepoArtifact(Artifact artifact, boolean installed, Path newLocalRepoJarPath,
+                Path newLocalRepoPomPath, Path oldLocalRepoJarPath,
+                Path oldLocalRepoPomPath) {
+            super();
+            this.artifact = artifact;
+            this.installed = installed;
+            this.newLocalRepoJarPath = newLocalRepoJarPath;
+            this.newLocalRepoPomPath = newLocalRepoPomPath;
+            this.oldLocalRepoJarPath = oldLocalRepoJarPath;
+            this.oldLocalRepoPomPath = oldLocalRepoPomPath;
+        }
     }
 
     public static class InstallableArtifact {
-        public InstallableArtifact(Artifact artifact, Path pomPath, Path jarPath) {
+        private final LocalRepoArtifact local;
+        private final Path sourcePomPath;
+
+        public InstallableArtifact(LocalRepoArtifact local, Path pomPath) {
             super();
-            this.artifact = artifact;
-            this.pomPath = pomPath;
-            this.jarPath = jarPath;
+            this.local = local;
+            this.sourcePomPath = pomPath;
         }
-        private final Artifact artifact;
-        private final Path pomPath;
-        private final Path jarPath;
     }
+
     public static class Artifact {
         private String groupId;
         private String artifactId;
         private String version;
+
+        public ArtifactCoordinate asNewCoordinate(String type) {
+            final DefaultArtifactCoordinate result = new DefaultArtifactCoordinate();
+            result.setGroupId(groupId);
+            result.setArtifactId(newArtifactId(artifactId));
+            result.setVersion(version);
+            result.setExtension(type);
+            return result;
+        }
+
+        public ArtifactCoordinate asOldCoordinate(String type, String classifier) {
+            final DefaultArtifactCoordinate result = new DefaultArtifactCoordinate();
+            result.setGroupId(groupId);
+            result.setArtifactId(artifactId);
+            result.setVersion(version);
+            result.setExtension(type);
+            if (classifier != null) {
+                result.setClassifier(classifier);
+            }
+            return result;
+        }
+
+        public DependableCoordinate asOldCoordinate() {
+            final DefaultDependableCoordinate result = new DefaultDependableCoordinate();
+            result.setGroupId(groupId);
+            result.setArtifactId(artifactId);
+            result.setVersion(version);
+            result.setType("test-jar");
+            result.setClassifier("tests");
+            return result;
+        }
 
         public String getGroupId() {
             return groupId;

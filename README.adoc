@@ -11,7 +11,7 @@ You hope to make that possible by adding those test-jars as a dependency in the 
 tests. But you will find our soon that Surefire/Failsafe Maven plugin cannot run those tests seamlessly. The build will
 most probably fail due to dependencies missing in the class path of the executed tests. Closer look will reveal that the
 missing dependencies are exactly the ones having the test scope in the POM of the test module of the third party
-project. This is caused by the fact that Maven, by design, doed not (transitively) pull test dependencies for you - see
+project. This is caused by the fact that Maven, by design, does not (transitively) pull test dependencies for you - see
 https://issues.apache.org/jira/browse/MNG-1378
 
 There are several solutions to this problem.
@@ -28,11 +28,13 @@ Maven module. Good luck with asking the third party project to do this for you.
 
 == "Synthetic tests modules" solution
 
-That's what the `repackage-tests-maven-plugin` implements. The plugin takes the POMs of test-jars and does the following modifications with them:
+That's what the `repackage-tests-maven-plugin` implements. All necessary steps happen on your side, so you'll be able to
+run any third party tests without needing to do anything special on their side. The plugin downloads the test-jars
+(specified via the `testJars` mojo parameter) and the associated POMs and does the following modifications with them:
 
 * Renames the module by appending `-tests` to the original artifactId
-* Removes all non-test dependencies
-* Removes the test scope from every remaining dependency
+* Removes all non-`test` dependencies
+* Removes the `test` scope from every remaining dependency
 * Adds the dependency on the original artifact (without the `-tests` suffix)
 
 The resulting `pom.xml` files are then installed along with the original test-jars into the local Maven repository. And
@@ -40,4 +42,33 @@ your module in which you'd like to run them can seamlessly use them as dependenc
 
 == Configuration
 
-See this example: https://github.com/ppalaga/repackage-tests-maven-plugin/blob/master/src/it/repackage-and-install-test-jars/pom.xml#L49
+[source,shell]
+----
+<plugin>
+  <groupId>org.l2x6.rpkgtests</groupId>
+  <artifactId>repackage-tests-maven-plugin</artifactId>
+  <version><!-- Check the latest via http://central.maven.org/maven2/org/l2x6/rpkgtests/repackage-tests-maven-plugin/ --></version>
+  <executions>
+    <execution>
+      <id>repackage-and-install-test-jars</id>
+      <goals>
+        <goal>repackage-and-install-test-jars</goal>
+      </goals>
+      <phase>generate-resources</phase>
+      <configuration>
+        <testJars>
+          <testJar>
+            <!-- The test-jar will be installed
+                 along with the transformed POM as
+                 org.my-org:my-artifact-tests:1.2.3
+                 in the local Maven repository -->
+            <groupId>org.my-org</groupId>
+            <artifactId>my-artifact</artifactId>
+            <version>1.2.3</version>
+          </testJar>
+        </testJars>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+----
