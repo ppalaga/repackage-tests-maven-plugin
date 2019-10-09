@@ -41,7 +41,6 @@ import javax.xml.xpath.XPathFactory;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -67,16 +66,18 @@ import org.w3c.dom.NodeList;
 @Mojo(name = "repackage-and-install-test-jars", requiresDependencyResolution = ResolutionScope.NONE, defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
 
-    /** A collection of {@link Artifact}s representing test-jars which should be processed by this mojo.
+    /**
+     * A collection of {@link Artifact}s representing test-jars which should be processed by this mojo.
      * <p>
      * An example:
+     *
      * <pre>
      * {@code
      * <testJars>
      *   <testJar>
      *     <!-- The transformed test-jar artifact
      *          will be installed as
-     *          org.myorg:my-artifact-tests:1.2.3
+     *          org.myorg:my-artifact-rpkgtests:1.2.3
      *          in the local Maven repository -->
      *     <groupId>org.myorg</groupId>
      *     <artifactId>my-artifact</artifactId>
@@ -117,13 +118,10 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
     private MavenSession session;
 
     @Component
-    private BuildPluginManager pluginManager;
-
-    @Component
     private DependencyResolver dependencyResolver;
 
     @Component
-    protected RepositoryManager repositoryManager;
+    private RepositoryManager repositoryManager;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -146,16 +144,17 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
         final ProjectBuildingRequest request = session.getProjectBuildingRequest();
         final Path repoRoot = repositoryManager.getLocalRepositoryBasedir(request).toPath();
 
-        final Path newJarPath = repoRoot.resolve(repositoryManager.getPathForLocalArtifact(request,
-                artifact.asNewCoordinate("jar")));
-        final Path newPomPath = repoRoot.resolve(repositoryManager.getPathForLocalArtifact(request,
-                artifact.asNewCoordinate("pom")));
+        final String newAId = artifact.artifactId + "-rpkgtests";
+        final Path newJarPath = repoRoot.resolve(
+                repositoryManager.getPathForLocalArtifact(request, artifact.asArtifactCoordinate(newAId, "jar", null)));
+        final Path newPomPath = repoRoot.resolve(
+                repositoryManager.getPathForLocalArtifact(request, artifact.asArtifactCoordinate(newAId, "pom", null)));
         final Path oldJarPath = repoRoot.resolve(repositoryManager.getPathForLocalArtifact(request,
-                artifact.asOldCoordinate("jar", "tests")));
+                artifact.asArtifactCoordinate(artifact.artifactId, "jar", "tests")));
         final Path oldPomPath = repoRoot.resolve(repositoryManager.getPathForLocalArtifact(request,
-                artifact.asOldCoordinate("pom", null)));
+                artifact.asArtifactCoordinate(artifact.artifactId, "pom", null)));
 
-        final LocalRepoArtifact localRepoArtifact = new LocalRepoArtifact(artifact,
+        final LocalRepoArtifact localRepoArtifact = new LocalRepoArtifact(artifact, newAId,
                 Files.exists(newJarPath) && Files.exists(newPomPath), newJarPath, newPomPath, oldJarPath, oldPomPath);
         return localRepoArtifact;
     }
@@ -165,15 +164,16 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
             Files.createDirectories(installable.local.newLocalRepoJarPath.getParent());
             Files.copy(installable.local.oldLocalRepoJarPath, installable.local.newLocalRepoJarPath);
         } catch (IOException e) {
-            throw new RuntimeException(
-                    "Could not copy from " + installable.local.oldLocalRepoJarPath + " to " + installable.local.newLocalRepoJarPath, e);
+            throw new RuntimeException("Could not copy from " + installable.local.oldLocalRepoJarPath + " to "
+                    + installable.local.newLocalRepoJarPath, e);
         }
         try {
             Files.createDirectories(installable.local.newLocalRepoPomPath.getParent());
             Files.copy(installable.sourcePomPath, installable.local.newLocalRepoPomPath);
         } catch (IOException e) {
             throw new RuntimeException(
-                    "Could not copy from " + installable.sourcePomPath + " to " + installable.local.newLocalRepoPomPath, e);
+                    "Could not copy from " + installable.sourcePomPath + " to " + installable.local.newLocalRepoPomPath,
+                    e);
         }
     }
 
@@ -218,8 +218,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
             final Document doc = (Document) result.getNode();
             final Node artifactNode = (Node) xPath.evaluate(anyNs("project", "artifactId"), doc, XPathConstants.NODE);
             final String oldArtifactId = artifactNode.getTextContent();
-            final String newArtifactId = newArtifactId(oldArtifactId);
-            artifactNode.setTextContent(newArtifactId);
+            artifactNode.setTextContent(localRepoArtifact.newArtifactId);
 
             final Node nameNode = (Node) xPath.evaluate(anyNs("project", "name"), doc, XPathConstants.NODE);
             if (nameNode != null) {
@@ -232,7 +231,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
                     XPathConstants.NODESET);
             for (int i = 0; i < deps.getLength(); i++) {
                 final Node dep = deps.item(i);
-                final Node scope = (Node) xPath.evaluate(anyNs("scope"), dep, XPathConstants.NODE);
+                final Node scope = (Node) xPath.evaluate("*[local-name()='scope']", dep, XPathConstants.NODE);
                 if (scope != null && "test".equals(scope.getTextContent())) {
                     scope.getParentNode().removeChild(scope);
                 } else {
@@ -256,7 +255,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
             remove(xPath, anyNs("project", "build"), doc);
             remove(xPath, anyNs("project", "profiles"), doc);
 
-            final Path testsPom = workDir.toPath().resolve(newArtifactId + "-" + artifact.version + ".pom");
+            final Path testsPom = workDir.toPath().resolve(localRepoArtifact.newArtifactId + "-" + artifact.version + ".pom");
             Files.createDirectories(testsPom.getParent());
             try (Writer w = Files.newBufferedWriter(testsPom)) {
                 t.transform(new DOMSource(doc), new StreamResult(w));
@@ -273,10 +272,6 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
 
     }
 
-    private static String newArtifactId(final String oldArtifactId) {
-        return oldArtifactId + "-tests";
-    }
-
     private void remove(XPath xPath, String xPathExpression, Document doc) throws XPathExpressionException {
         final Node node = (Node) xPath.evaluate(xPathExpression, doc, XPathConstants.NODE);
         if (node != null) {
@@ -288,7 +283,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
 
         try {
             Iterable<ArtifactResult> resolvedArtifacts = dependencyResolver.resolveDependencies(
-                    session.getProjectBuildingRequest(), localRepoArtifact.artifact.asOldCoordinate(), null);
+                    session.getProjectBuildingRequest(), localRepoArtifact.artifact.asDependableCoordinate(), null);
             boolean jarDownloaded = false;
             for (ArtifactResult ar : resolvedArtifacts) {
                 if (ar.getArtifact().getFile().toPath().equals(localRepoArtifact.oldLocalRepoJarPath)) {
@@ -314,12 +309,13 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
         private final Path newLocalRepoPomPath;
         private final Path oldLocalRepoJarPath;
         private final Path oldLocalRepoPomPath;
+        private final String newArtifactId;
 
-        public LocalRepoArtifact(Artifact artifact, boolean installed, Path newLocalRepoJarPath,
-                Path newLocalRepoPomPath, Path oldLocalRepoJarPath,
-                Path oldLocalRepoPomPath) {
+        public LocalRepoArtifact(Artifact artifact, String newArtifactId, boolean installed, Path newLocalRepoJarPath,
+                Path newLocalRepoPomPath, Path oldLocalRepoJarPath, Path oldLocalRepoPomPath) {
             super();
             this.artifact = artifact;
+            this.newArtifactId = newArtifactId;
             this.installed = installed;
             this.newLocalRepoJarPath = newLocalRepoJarPath;
             this.newLocalRepoPomPath = newLocalRepoPomPath;
@@ -344,16 +340,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
         private String artifactId;
         private String version;
 
-        public ArtifactCoordinate asNewCoordinate(String type) {
-            final DefaultArtifactCoordinate result = new DefaultArtifactCoordinate();
-            result.setGroupId(groupId);
-            result.setArtifactId(newArtifactId(artifactId));
-            result.setVersion(version);
-            result.setExtension(type);
-            return result;
-        }
-
-        public ArtifactCoordinate asOldCoordinate(String type, String classifier) {
+        public ArtifactCoordinate asArtifactCoordinate(String artifactId, String type, String classifier) {
             final DefaultArtifactCoordinate result = new DefaultArtifactCoordinate();
             result.setGroupId(groupId);
             result.setArtifactId(artifactId);
@@ -365,7 +352,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
             return result;
         }
 
-        public DependableCoordinate asOldCoordinate() {
+        public DependableCoordinate asDependableCoordinate() {
             final DefaultDependableCoordinate result = new DefaultDependableCoordinate();
             result.setGroupId(groupId);
             result.setArtifactId(artifactId);

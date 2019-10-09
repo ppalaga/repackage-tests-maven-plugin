@@ -22,6 +22,29 @@
   <groupId>org.l2x6.rpkgtests</groupId>
   <artifactId>repackage-and-install-test-jars</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <properties>
+    <camel-quarkus.version>0.2.0</camel-quarkus.version>
+  </properties>
+
+  <modules>
+    <module>repackage</module>
+    <module>run-tests-jdbc</module>
+    <module>run-tests-csv</module>
+  </modules>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.camel.quarkus</groupId>
+        <artifactId>camel-quarkus-bom</artifactId>
+        <version>${camel-quarkus.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <build>
 
@@ -35,32 +58,5 @@
       </plugins>
     </pluginManagement>
 
-    <plugins>
-      <plugin>
-        <groupId>org.l2x6.rpkgtests</groupId>
-        <artifactId>repackage-tests-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>repackage-and-install-test-jars</id>
-            <goals>
-              <goal>repackage-and-install-test-jars</goal>
-            </goals>
-            <phase>generate-resources</phase>
-            <configuration>
-              <testJars>
-                <testJar>
-                  <!-- The transformed artifact will be installed as
-                       org.apache.camel.quarkus:camel-quarkus-integration-test-jdbc-tests:0.2.0
-                       in the local Maven repository -->
-                  <groupId>org.apache.camel.quarkus</groupId>
-                  <artifactId>camel-quarkus-integration-test-jdbc</artifactId>
-                  <version>0.2.0</version>
-                </testJar>
-              </testJars>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
   </build>
 </project>

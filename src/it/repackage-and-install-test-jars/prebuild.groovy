@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
-import java.nio.file.Path;
-import java.nio.file.Files;
+import java.nio.file.Path
+import java.nio.file.Files
 
-final Path localRepoRoot = localRepositoryPath.toPath()
-
-Files.deleteIfExists(localRepoRoot.resolve('org/apache/camel/quarkus/camel-quarkus-jdbc/0.2.0/camel-quarkus-jdbc-0.2.0.pom'))
-Files.deleteIfExists(localRepoRoot.resolve('org/apache/camel/quarkus/camel-quarkus-jdbc/0.2.0/camel-quarkus-jdbc-0.2.0-tests.jar'))
+void cleanArtifacts(String key) {
+    Files.deleteIfExists(localRepositoryPath.toPath().resolve('org/apache/camel/quarkus/camel-quarkus-integration-test-' + key + '-rpkgtests/0.2.0/camel-quarkus-integration-test-' + key + '-rpkgtests-0.2.0.pom'))
+    Files.deleteIfExists(localRepositoryPath.toPath().resolve('org/apache/camel/quarkus/camel-quarkus-integration-test-' + key + '-rpkgtests/0.2.0/camel-quarkus-integration-test-' + key + '-rpkgtests-0.2.0.jar'))
+    Files.deleteIfExists(localRepositoryPath.toPath().resolve('org/apache/camel/quarkus/camel-quarkus-integration-test-' + key + '/0.2.0/camel-quarkus-integration-test-' + key + '-0.2.0.pom'))
+    Files.deleteIfExists(localRepositoryPath.toPath().resolve('org/apache/camel/quarkus/camel-quarkus-integration-test-' + key + '/0.2.0/camel-quarkus-integration-test-' + key + '-0.2.0-tests.jar'))
+}
+cleanArtifacts('jdbc')
+cleanArtifacts('csv')
 
 return true;

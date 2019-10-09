@@ -35,7 +35,7 @@ run any third party tests without needing to do anything special on their side. 
 * Renames the module by appending `-tests` to the original artifactId
 * Removes all non-`test` dependencies
 * Removes the `test` scope from every remaining dependency
-* Adds the dependency on the original artifact (without the `-tests` suffix)
+* Adds the dependency on the original artifact (without the `-rpkgtests` suffix)
 
 The resulting `pom.xml` files are then installed along with the original test-jars into the local Maven repository. And
 your module in which you'd like to run them can seamlessly use them as dependencies.
@@ -60,7 +60,7 @@ your module in which you'd like to run them can seamlessly use them as dependenc
           <testJar>
             <!-- The test-jar will be installed
                  along with the transformed POM as
-                 org.my-org:my-artifact-tests:1.2.3
+                 org.my-org:my-artifact-rpkgtests:1.2.3
                  in the local Maven repository -->
             <groupId>org.my-org</groupId>
             <artifactId>my-artifact</artifactId>

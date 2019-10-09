@@ -14,4 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- return true
+import java.nio.file.Path
+import java.nio.file.Files
+
+void assertArtifactsExist(String key) {
+    assertExists('org/apache/camel/quarkus/camel-quarkus-integration-test-' + key + '-rpkgtests/0.2.0/camel-quarkus-integration-test-' + key + '-rpkgtests-0.2.0.pom')
+    assertExists('org/apache/camel/quarkus/camel-quarkus-integration-test-' + key + '-rpkgtests/0.2.0/camel-quarkus-integration-test-' + key + '-rpkgtests-0.2.0.jar')
+    assertExists('org/apache/camel/quarkus/camel-quarkus-integration-test-' + key + '/0.2.0/camel-quarkus-integration-test-' + key + '-0.2.0.pom')
+    assertExists('org/apache/camel/quarkus/camel-quarkus-integration-test-' + key + '/0.2.0/camel-quarkus-integration-test-' + key + '-0.2.0-tests.jar')
+}
+void assertExists(String path) {
+    assert Files.exists(localRepositoryPath.toPath().resolve(path))
+}
+
+assertArtifactsExist('jdbc')
+assertArtifactsExist('csv')
+
+return true;
