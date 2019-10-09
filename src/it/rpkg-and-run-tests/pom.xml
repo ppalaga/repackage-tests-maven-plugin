@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.l2x6.rpkgtests</groupId>
-  <artifactId>repackage-and-install-test-jars</artifactId>
+  <artifactId>rpkg-and-run-tests</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
@@ -29,7 +29,7 @@
   </properties>
 
   <modules>
-    <module>repackage</module>
+    <module>rpkgtests</module>
     <module>run-tests-jdbc</module>
     <module>run-tests-csv</module>
   </modules>
@@ -52,7 +52,7 @@
       <plugins>
         <plugin>
           <groupId>org.l2x6.rpkgtests</groupId>
-          <artifactId>repackage-tests-maven-plugin</artifactId>
+          <artifactId>rpkgtests-maven-plugin</artifactId>
           <version>@pom.version@</version>
         </plugin>
       </plugins>

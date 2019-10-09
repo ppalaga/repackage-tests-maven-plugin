@@ -63,7 +63,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@Mojo(name = "repackage-and-install-test-jars", requiresDependencyResolution = ResolutionScope.NONE, defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
+@Mojo(name = "rpkgtests", requiresDependencyResolution = ResolutionScope.NONE, defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
 
     /**

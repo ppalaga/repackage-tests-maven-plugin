@@ -20,14 +20,14 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.l2x6.rpkgtests</groupId>
-  <artifactId>repackage-tests-maven-plugin</artifactId>
+  <artifactId>rpkgtests-maven-plugin</artifactId>
   <version>0.1.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Repackage Tests Maven Plugin</name>
   <description>A Maven plugin to transform a test-jar to a "normal" jar</description>
 
-  <url>https://github.com/ppalaga/repackage-tests-maven-plugin</url>
+  <url>https://github.com/ppalaga/rpkgtests-maven-plugin</url>
   <inceptionYear>2019</inceptionYear>
   <licenses>
     <license>
@@ -50,14 +50,14 @@
   </prerequisites>
 
   <scm>
-    <connection>scm:git:git@github.com:ppalaga/repackage-tests-maven-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:ppalaga/repackage-tests-maven-plugin.git</developerConnection>
-    <url>https://github.com/ppalaga/repackage-tests-maven-plugin</url>
+    <connection>scm:git:git@github.com:ppalaga/rpkgtests-maven-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:ppalaga/rpkgtests-maven-plugin.git</developerConnection>
+    <url>https://github.com/ppalaga/rpkgtests-maven-plugin</url>
     <tag>head</tag>
   </scm>
   <issueManagement>
     <system>GitHub Issues</system>
-    <url>https://github.com/ppalaga/repackage-tests-maven-plugin/issues</url>
+    <url>https://github.com/ppalaga/rpkgtests-maven-plugin/issues</url>
   </issueManagement>
   <distributionManagement>
     <snapshotRepository>
@@ -70,7 +70,7 @@
     </repository>
     <!-- <site>
       <id>github</id>
-      <url>scm:git:git@github.com:ppalaga/repackage-tests-maven-plugin.git</url>
+      <url>scm:git:git@github.com:ppalaga/rpkgtests-maven-plugin.git</url>
     </site> -->
   </distributionManagement>
 

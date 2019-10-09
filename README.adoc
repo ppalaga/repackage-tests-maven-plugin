@@ -1,4 +1,4 @@
-= `repackage-tests-maven-plugin`
+= `rpkgtests-maven-plugin`
 
 This Maven plugin makes it possible to run tests from third party test jars outside their original source tree.
 
@@ -28,7 +28,7 @@ Maven module. Good luck with asking the third party project to do this for you.
 
 == "Synthetic tests modules" solution
 
-That's what the `repackage-tests-maven-plugin` implements. All necessary steps happen on your side, so you'll be able to
+That's what the `rpkgtests-maven-plugin` implements. All necessary steps happen on your side, so you'll be able to
 run any third party tests without needing to do anything special on their side. The plugin downloads the test-jars
 (specified via the `testJars` mojo parameter) and the associated POMs and does the following modifications with them:
 
@@ -46,13 +46,13 @@ your module in which you'd like to run them can seamlessly use them as dependenc
 ----
 <plugin>
   <groupId>org.l2x6.rpkgtests</groupId>
-  <artifactId>repackage-tests-maven-plugin</artifactId>
-  <version><!-- Check the latest via http://central.maven.org/maven2/org/l2x6/rpkgtests/repackage-tests-maven-plugin/ --></version>
+  <artifactId>rpkgtests-maven-plugin</artifactId>
+  <version><!-- Check the latest via http://central.maven.org/maven2/org/l2x6/rpkgtests/rpkgtests-maven-plugin/ --></version>
   <executions>
     <execution>
-      <id>repackage-and-install-test-jars</id>
+      <id>rpkgtests</id>
       <goals>
-        <goal>repackage-and-install-test-jars</goal>
+        <goal>rpkgtests</goal>
       </goals>
       <phase>generate-resources</phase>
       <configuration>

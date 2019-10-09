@@ -20,12 +20,23 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.l2x6.rpkgtests</groupId>
-    <artifactId>repackage-and-install-test-jars</artifactId>
+    <artifactId>rpkg-and-run-tests</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <artifactId>repackage</artifactId>
+  <artifactId>run-tests-jdbc</artifactId>
 
   <dependencies>
+    <dependency>
+      <groupId>org.l2x6.rpkgtests</groupId>
+      <artifactId>rpkgtests</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>org.apache.camel.quarkus</groupId>
       <artifactId>camel-quarkus-integration-test-jdbc</artifactId>
@@ -33,43 +44,27 @@
     </dependency>
     <dependency>
       <groupId>org.apache.camel.quarkus</groupId>
-      <artifactId>camel-quarkus-integration-test-csv</artifactId>
+      <artifactId>camel-quarkus-integration-test-jdbc-rpkgtests</artifactId>
       <version>${camel-quarkus.version}</version>
+      <scope>test</scope>
     </dependency>
+
   </dependencies>
 
   <build>
 
     <plugins>
+
       <plugin>
-        <groupId>org.l2x6.rpkgtests</groupId>
-        <artifactId>repackage-tests-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>repackage-and-install-test-jars</id>
-            <goals>
-              <goal>repackage-and-install-test-jars</goal>
-            </goals>
-            <phase>validate</phase>
-            <configuration>
-              <testJars>
-                <testJar>
-                  <!-- The transformed artifact will be installed as
-                       org.apache.camel.quarkus:camel-quarkus-integration-test-jdbc-rpkgtests:0.2.0
-                       in the local Maven repository -->
-                  <groupId>org.apache.camel.quarkus</groupId>
-                  <artifactId>camel-quarkus-integration-test-jdbc</artifactId>
-                  <version>${camel-quarkus.version}</version>
-                </testJar>
-                <testJar>
-                  <groupId>org.apache.camel.quarkus</groupId>
-                  <artifactId>camel-quarkus-integration-test-csv</artifactId>
-                  <version>${camel-quarkus.version}</version>
-                </testJar>
-              </testJars>
-            </configuration>
-          </execution>
-        </executions>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.22.0</version>
+        <configuration>
+          <trimStackTrace>false</trimStackTrace>
+          <dependenciesToScan>
+             <dependency>org.apache.camel.quarkus:camel-quarkus-integration-test-jdbc-rpkgtests</dependency>
+          </dependenciesToScan>
+        </configuration>
       </plugin>
 
     </plugins>
