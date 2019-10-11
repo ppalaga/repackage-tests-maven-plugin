@@ -29,16 +29,16 @@ Maven module. Good luck with asking the third party project to do this for you.
 == "Synthetic tests modules" solution
 
 That's what the `rpkgtests-maven-plugin` implements. All necessary steps happen on your side, so you'll be able to
-run any third party tests without needing to do anything special on their side. The plugin downloads the test-jars
+run any third party tests without needing to do anything special on the third party side. The plugin downloads the test-jars
 (specified via the `testJars` mojo parameter) and the associated POMs and does the following modifications with them:
 
-* Renames the module by appending `-tests` to the original artifactId
+* Renames the module by appending `-rpkgtests` to the original artifactId
 * Removes all non-`test` dependencies
 * Removes the `test` scope from every remaining dependency
 * Adds the dependency on the original artifact (without the `-rpkgtests` suffix)
 
 The resulting `pom.xml` files are then installed along with the original test-jars into the local Maven repository. And
-your module in which you'd like to run them can seamlessly use them as dependencies.
+your module in which you'd like to run them can seamlessly use them as `test` scoped dependencies.
 
 == Configuration
 
