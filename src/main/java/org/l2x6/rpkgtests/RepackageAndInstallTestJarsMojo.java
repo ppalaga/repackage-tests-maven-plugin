@@ -22,6 +22,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import javax.xml.transform.Transformer;
@@ -131,7 +132,15 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
         if (testJars != null && !testJars.isEmpty()) {
             for (Artifact artifact : testJars) {
                 final LocalRepoArtifact localRepoArtifact = createLocalRepoArtifact(artifact);
-                if (force || !localRepoArtifact.installed || artifact.version.endsWith("-SNAPSHOT")) {
+                final boolean installed = localRepoArtifact.installed;
+                final boolean isSnapshot = artifact.version.endsWith("-SNAPSHOT");
+                final boolean performRpkg = force || !installed || isSnapshot;
+                getLog()
+                    .info("force = " + force + "; " + localRepoArtifact.artifact
+                          + (installed ? " installed;" : " not installed;")
+                          + (isSnapshot ? " is SNAPSHOT;" : " is not SNAPSHOT;")
+                          + (performRpkg ? " thus repackaging" : " thus skipping the repackaging"));
+                if (performRpkg) {
                     download(localRepoArtifact);
                     final InstallableArtifact installable = transform(localRepoArtifact);
                     install(installable);
@@ -162,14 +171,14 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
     private void install(InstallableArtifact installable) throws MojoExecutionException {
         try {
             Files.createDirectories(installable.local.newLocalRepoJarPath.getParent());
-            Files.copy(installable.local.oldLocalRepoJarPath, installable.local.newLocalRepoJarPath);
+            Files.copy(installable.local.oldLocalRepoJarPath, installable.local.newLocalRepoJarPath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException("Could not copy from " + installable.local.oldLocalRepoJarPath + " to "
                     + installable.local.newLocalRepoJarPath, e);
         }
         try {
             Files.createDirectories(installable.local.newLocalRepoPomPath.getParent());
-            Files.copy(installable.sourcePomPath, installable.local.newLocalRepoPomPath);
+            Files.copy(installable.sourcePomPath, installable.local.newLocalRepoPomPath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException(
                     "Could not copy from " + installable.sourcePomPath + " to " + installable.local.newLocalRepoPomPath,

@@ -543,7 +543,7 @@ limitations under the License.</inlineHeader>
         <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
 
-      <!-- <plugin>
+      <plugin>
         <artifactId>maven-invoker-plugin</artifactId>
         <executions>
           <execution>
@@ -559,7 +559,7 @@ limitations under the License.</inlineHeader>
             </configuration>
           </execution>
         </executions>
-      </plugin> -->
+      </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
