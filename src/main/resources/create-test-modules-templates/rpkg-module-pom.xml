@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>[=parent.groupId]</groupId>
+        <artifactId>[=parent.artifactId]</artifactId>
+        <version>[=parent.version]</version>
+        <relativePath>[=parentRelativePath]</relativePath>
+    </parent>
+
+    <artifactId>[=rpkgModule.artifactId]</artifactId>
+
+    <dependencies>
+[#list testJars as testJar]
+        <dependency>
+            <groupId>[=testJar.groupId]</groupId>
+            <artifactId>[=testJar.artifactId]</artifactId>
+            <version>[=testJar.version]</version>
+        </dependency>
+[/#list]
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.l2x6.rpkgtests</groupId>
+                <artifactId>rpkgtests-maven-plugin</artifactId>
+                <version>[=rpkgtestsPluginVersion]</version>
+                <executions>
+                    <execution>
+                        <id>rpkgtests</id>
+                        <goals>
+                            <goal>rpkgtests</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <testJars>
+[#list testJars as testJar]
+                                <testJar>
+                                    <groupId>[=testJar.groupId]</groupId>
+                                    <artifactId>[=testJar.artifactId]</artifactId>
+                                    <version>[=testJar.version]</version>
+                                </testJar>
+[/#list]
+                            </testJars>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

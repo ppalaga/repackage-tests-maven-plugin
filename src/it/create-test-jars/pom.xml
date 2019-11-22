@@ -24,11 +24,17 @@
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
+  <properties>
+    <rpkgtests-maven-plugin.version>@pom.version@</rpkgtests-maven-plugin.version>
+  </properties>
+
   <modules>
     <module>lib</module>
     <module>testable-1</module>
     <module>testable-2</module>
     <module>create</module>
+    <module>generate</module>
+    <module>run-tests</module>
   </modules>
 
   <dependencyManagement>
@@ -49,7 +55,7 @@
         <plugin>
           <groupId>org.l2x6.rpkgtests</groupId>
           <artifactId>rpkgtests-maven-plugin</artifactId>
-          <version>@pom.version@</version>
+          <version>${rpkgtests-maven-plugin.version}</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>

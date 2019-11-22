@@ -19,7 +19,6 @@ package org.l2x6.rpkgtests;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,8 +33,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -45,7 +42,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 /**
  * Create the list of test jar artifacts in the XML format, something like
@@ -115,17 +111,8 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
             }
         }
         final List<TestJar> testJars = new ArrayList<>();
-        final MavenXpp3Reader reader = new MavenXpp3Reader();
         for (Path pomPath : pomPaths) {
-            try (Reader r = Files.newBufferedReader(pomPath, charset)) {
-                final Model pom = reader.read(r);
-                final String groupId = pom.getGroupId() != null ? pom.getGroupId() : pom.getParent().getGroupId();
-                final String version = pom.getVersion() != null ? pom.getVersion() : pom.getParent().getVersion();
-                final String artifactId = pom.getArtifactId();
-                testJars.add(new TestJar(groupId, artifactId, version));
-            } catch (IOException | XmlPullParserException e) {
-                throw new MojoExecutionException("Could not read or parse " + pomPath, e);
-            }
+            testJars.add(TestJar.read(pomPath, charset));
         }
 
         final Path outputPath = baseDir.toPath().resolve(testJarsPath.toPath());

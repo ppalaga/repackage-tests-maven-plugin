@@ -16,8 +16,12 @@
  */
 package org.l2x6.rpkgtests;
 
+import java.io.Reader;
 import java.util.List;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -26,6 +30,16 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "testJars")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class TestJars {
+
+    public static TestJars read(Reader reader, String source) {
+        try {
+            final JAXBContext ctx = JAXBContext.newInstance(TestJars.class, TestJar.class);
+            final Unmarshaller um = ctx.createUnmarshaller();
+            return (TestJars) um.unmarshal(reader);
+        } catch (JAXBException e) {
+            throw new RuntimeException("Could not deserialize testJars from XML " + source, e);
+        }
+    }
 
     @XmlElement(name = "testJar")
     private List<TestJar> testJars;

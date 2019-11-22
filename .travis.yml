@@ -1,0 +1,16 @@
+language: java
+# Enable container-based infrastructure
+# see https://docs.travis-ci.com/user/reference/overview/
+sudo: false
+
+jdk:
+  - openjdk8
+
+notifications:
+  email: false
+
+# Skip the Travis CI's default install command
+install: true
+
+script:
+- ./mvnw clean verify -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dinvoker.streamLogs=true

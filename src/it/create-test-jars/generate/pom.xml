@@ -23,17 +23,12 @@
     <artifactId>create-test-jars-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <artifactId>create-test-jars</artifactId>
+  <artifactId>create-test-jars-generate</artifactId>
 
   <dependencies>
     <dependency>
       <groupId>org.l2x6.rpkgtests.create-test-jars</groupId>
-      <artifactId>create-test-jars-testable-1</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.l2x6.rpkgtests.create-test-jars</groupId>
-      <artifactId>create-test-jars-testable-2</artifactId>
+      <artifactId>create-test-jars</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
@@ -48,19 +43,20 @@
             <artifactId>rpkgtests-maven-plugin</artifactId>
             <executions>
               <execution>
-                <id>create-test-jars</id>
-                <inherited>false</inherited>
+                <id>create-test-modules</id>
                 <goals>
-                  <goal>create-test-jars-file</goal>
+                  <goal>create-test-modules</goal>
                 </goals>
+                <phase>pre-integration-test</phase>
                 <configuration>
-                  <testJarsPath>${project.basedir}/test-jars.xml</testJarsPath>
-                  <fileSets>
-                    <fileSet>
-                      <directory>${basedir}/..</directory>
-                      <includes>testable-*/pom.xml</includes>
-                    </fileSet>
-                  </fileSets>
+                  <testJarFiles>
+                      <testJarFile>${basedir}/../create/test-jars.xml</testJarFile>
+                  </testJarFiles>
+                  <testModulesParentDir>../run-tests</testModulesParentDir>
+                  <testModuleArtifactIdReplacers>/(.*)/$1-run/</testModuleArtifactIdReplacers>
+                  <testModuleDirReplacers>/create-test-jars-//</testModuleDirReplacers>
+                  <rpkgModulePomXmlPath>../run-tests/rpkgtests/pom.xml</rpkgModulePomXmlPath>
+                  <rpkgtestsPluginVersion>${rpkgtests-maven-plugin.version}</rpkgtestsPluginVersion>
                 </configuration>
               </execution>
             </executions>
