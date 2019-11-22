@@ -51,11 +51,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.shared.transfer.artifact.ArtifactCoordinate;
-import org.apache.maven.shared.transfer.artifact.DefaultArtifactCoordinate;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResult;
-import org.apache.maven.shared.transfer.dependencies.DefaultDependableCoordinate;
-import org.apache.maven.shared.transfer.dependencies.DependableCoordinate;
 import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
 import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolverException;
 import org.apache.maven.shared.transfer.repository.RepositoryManager;
@@ -68,7 +64,7 @@ import org.w3c.dom.NodeList;
 public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
 
     /**
-     * A collection of {@link Artifact}s representing test-jars which should be processed by this mojo.
+     * A collection of {@link TestJar}s representing test-jars which should be processed by this mojo.
      * <p>
      * An example:
      *
@@ -89,7 +85,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
      * </pre>
      */
     @Parameter(property = "rpkgtests.testJars")
-    private List<Artifact> testJars;
+    private List<TestJar> testJars;
 
     /** The directory where this mojo stores its temporary files */
     @Parameter(property = "rpkgtests.workDir", defaultValue = "${project.build.directory}/rpkgtests")
@@ -130,7 +126,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
             getLog().info("Skipping as requested via the skip mojo parameter");
         }
         if (testJars != null && !testJars.isEmpty()) {
-            for (Artifact artifact : testJars) {
+            for (TestJar artifact : testJars) {
                 final LocalRepoArtifact localRepoArtifact = createLocalRepoArtifact(artifact);
                 final boolean installed = localRepoArtifact.installed;
                 final boolean isSnapshot = artifact.version.endsWith("-SNAPSHOT");
@@ -149,7 +145,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
         }
     }
 
-    private LocalRepoArtifact createLocalRepoArtifact(Artifact artifact) {
+    private LocalRepoArtifact createLocalRepoArtifact(TestJar artifact) {
         final ProjectBuildingRequest request = session.getProjectBuildingRequest();
         final Path repoRoot = repositoryManager.getLocalRepositoryBasedir(request).toPath();
 
@@ -209,7 +205,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
     }
 
     private InstallableArtifact transform(LocalRepoArtifact localRepoArtifact) {
-        final Artifact artifact = localRepoArtifact.artifact;
+        final TestJar artifact = localRepoArtifact.artifact;
 
         try {
             final Transformer t = TransformerFactory.newInstance().newTransformer();
@@ -312,7 +308,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
 
     public static class LocalRepoArtifact {
 
-        private final Artifact artifact;
+        private final TestJar artifact;
         private final boolean installed;
         private final Path newLocalRepoJarPath;
         private final Path newLocalRepoPomPath;
@@ -320,7 +316,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
         private final Path oldLocalRepoPomPath;
         private final String newArtifactId;
 
-        public LocalRepoArtifact(Artifact artifact, String newArtifactId, boolean installed, Path newLocalRepoJarPath,
+        public LocalRepoArtifact(TestJar artifact, String newArtifactId, boolean installed, Path newLocalRepoJarPath,
                 Path newLocalRepoPomPath, Path oldLocalRepoJarPath, Path oldLocalRepoPomPath) {
             super();
             this.artifact = artifact;
@@ -341,63 +337,6 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
             super();
             this.local = local;
             this.sourcePomPath = pomPath;
-        }
-    }
-
-    public static class Artifact {
-        private String groupId;
-        private String artifactId;
-        private String version;
-
-        public ArtifactCoordinate asArtifactCoordinate(String artifactId, String type, String classifier) {
-            final DefaultArtifactCoordinate result = new DefaultArtifactCoordinate();
-            result.setGroupId(groupId);
-            result.setArtifactId(artifactId);
-            result.setVersion(version);
-            result.setExtension(type);
-            if (classifier != null) {
-                result.setClassifier(classifier);
-            }
-            return result;
-        }
-
-        public DependableCoordinate asDependableCoordinate() {
-            final DefaultDependableCoordinate result = new DefaultDependableCoordinate();
-            result.setGroupId(groupId);
-            result.setArtifactId(artifactId);
-            result.setVersion(version);
-            result.setType("test-jar");
-            result.setClassifier("tests");
-            return result;
-        }
-
-        public String getGroupId() {
-            return groupId;
-        }
-
-        public void setGroupId(String groupId) {
-            this.groupId = groupId;
-        }
-
-        public String getArtifactId() {
-            return artifactId;
-        }
-
-        public void setArtifactId(String artifactId) {
-            this.artifactId = artifactId;
-        }
-
-        public String getVersion() {
-            return version;
-        }
-
-        public void setVersion(String version) {
-            this.version = version;
-        }
-
-        @Override
-        public String toString() {
-            return groupId + ":" + artifactId + ":" + version;
         }
     }
 
