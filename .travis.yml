@@ -13,4 +13,4 @@ notifications:
 install: true
 
 script:
-- ./mvnw clean verify -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dinvoker.streamLogs=true
+- ./mvnw clean verify -ntp -Dinvoker.streamLogs=true
