@@ -60,7 +60,7 @@ import org.apache.maven.shared.model.fileset.util.FileSetManager;
  *         &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
  *     &lt;/testJar&gt;
  * &lt;/testJars&gt;
- * <pre>
+ * </pre>
  *
  * @author <a href="https://github.com/ppalaga">Peter Palaga</a>
  * @since 0.4.0
