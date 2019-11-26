@@ -41,7 +41,6 @@ import javax.xml.xpath.XPathFactory;
 
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -51,11 +50,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.shared.transfer.artifact.ArtifactCoordinate;
-import org.apache.maven.shared.transfer.artifact.DefaultArtifactCoordinate;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResult;
-import org.apache.maven.shared.transfer.dependencies.DefaultDependableCoordinate;
-import org.apache.maven.shared.transfer.dependencies.DependableCoordinate;
 import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
 import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolverException;
 import org.apache.maven.shared.transfer.repository.RepositoryManager;
@@ -64,32 +59,14 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+/**
+ * A mojo to repackage test JARs.
+ *
+ * @author <a href="https://github.com/ppalaga">Peter Palaga</a>
+ * @since 0.1.0
+ */
 @Mojo(name = "rpkgtests", requiresDependencyResolution = ResolutionScope.NONE, defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
-public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
-
-    /**
-     * A collection of {@link Artifact}s representing test-jars which should be processed by this mojo.
-     * <p>
-     * An example:
-     *
-     * <pre>
-     * {@code
-     * <testJars>
-     *   <testJar>
-     *     <!-- The transformed test-jar artifact
-     *          will be installed as
-     *          org.myorg:my-artifact-rpkgtests:1.2.3
-     *          in the local Maven repository -->
-     *     <groupId>org.myorg</groupId>
-     *     <artifactId>my-artifact</artifactId>
-     *     <version>1.2.3</version>
-     *   </testJar>
-     * </testJars>
-     * }
-     * </pre>
-     */
-    @Parameter(property = "rpkgtests.testJars")
-    private List<Artifact> testJars;
+public class RepackageAndInstallTestJarsMojo extends AbstractTestJarsConsumerMojo {
 
     /** The directory where this mojo stores its temporary files */
     @Parameter(property = "rpkgtests.workDir", defaultValue = "${project.build.directory}/rpkgtests")
@@ -129,27 +106,25 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
         if (skip) {
             getLog().info("Skipping as requested via the skip mojo parameter");
         }
-        if (testJars != null && !testJars.isEmpty()) {
-            for (Artifact artifact : testJars) {
-                final LocalRepoArtifact localRepoArtifact = createLocalRepoArtifact(artifact);
-                final boolean installed = localRepoArtifact.installed;
-                final boolean isSnapshot = artifact.version.endsWith("-SNAPSHOT");
-                final boolean performRpkg = force || !installed || isSnapshot;
-                getLog()
-                    .info("force = " + force + "; " + localRepoArtifact.artifact
-                          + (installed ? " installed;" : " not installed;")
-                          + (isSnapshot ? " is SNAPSHOT;" : " is not SNAPSHOT;")
-                          + (performRpkg ? " thus repackaging" : " thus skipping the repackaging"));
-                if (performRpkg) {
-                    download(localRepoArtifact);
-                    final InstallableArtifact installable = transform(localRepoArtifact);
-                    install(installable);
-                }
+        for (TestJar artifact : getTestJarsOrFail()) {
+            final LocalRepoArtifact localRepoArtifact = createLocalRepoArtifact(artifact);
+            final boolean installed = localRepoArtifact.installed;
+            final boolean isSnapshot = artifact.version.endsWith("-SNAPSHOT");
+            final boolean performRpkg = force || !installed || isSnapshot;
+            getLog()
+                .info("force = " + force + "; " + localRepoArtifact.artifact
+                      + (installed ? " installed;" : " not installed;")
+                      + (isSnapshot ? " is SNAPSHOT;" : " is not SNAPSHOT;")
+                      + (performRpkg ? " thus repackaging" : " thus skipping the repackaging"));
+            if (performRpkg) {
+                download(localRepoArtifact);
+                final InstallableArtifact installable = transform(localRepoArtifact);
+                install(installable);
             }
         }
     }
 
-    private LocalRepoArtifact createLocalRepoArtifact(Artifact artifact) {
+    private LocalRepoArtifact createLocalRepoArtifact(TestJar artifact) {
         final ProjectBuildingRequest request = session.getProjectBuildingRequest();
         final Path repoRoot = repositoryManager.getLocalRepositoryBasedir(request).toPath();
 
@@ -209,7 +184,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
     }
 
     private InstallableArtifact transform(LocalRepoArtifact localRepoArtifact) {
-        final Artifact artifact = localRepoArtifact.artifact;
+        final TestJar artifact = localRepoArtifact.artifact;
 
         try {
             final Transformer t = TransformerFactory.newInstance().newTransformer();
@@ -300,6 +275,10 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
                     break;
                 }
             }
+            if (Files.exists(localRepoArtifact.oldLocalRepoJarPath)) {
+                jarDownloaded = true;
+            }
+
             if (!jarDownloaded) {
                 throw new IllegalStateException("Could not assert that " + localRepoArtifact.artifact
                         + ":jar was downloaded as " + localRepoArtifact.oldLocalRepoJarPath);
@@ -312,7 +291,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
 
     public static class LocalRepoArtifact {
 
-        private final Artifact artifact;
+        private final TestJar artifact;
         private final boolean installed;
         private final Path newLocalRepoJarPath;
         private final Path newLocalRepoPomPath;
@@ -320,7 +299,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
         private final Path oldLocalRepoPomPath;
         private final String newArtifactId;
 
-        public LocalRepoArtifact(Artifact artifact, String newArtifactId, boolean installed, Path newLocalRepoJarPath,
+        public LocalRepoArtifact(TestJar artifact, String newArtifactId, boolean installed, Path newLocalRepoJarPath,
                 Path newLocalRepoPomPath, Path oldLocalRepoJarPath, Path oldLocalRepoPomPath) {
             super();
             this.artifact = artifact;
@@ -341,63 +320,6 @@ public class RepackageAndInstallTestJarsMojo extends AbstractMojo {
             super();
             this.local = local;
             this.sourcePomPath = pomPath;
-        }
-    }
-
-    public static class Artifact {
-        private String groupId;
-        private String artifactId;
-        private String version;
-
-        public ArtifactCoordinate asArtifactCoordinate(String artifactId, String type, String classifier) {
-            final DefaultArtifactCoordinate result = new DefaultArtifactCoordinate();
-            result.setGroupId(groupId);
-            result.setArtifactId(artifactId);
-            result.setVersion(version);
-            result.setExtension(type);
-            if (classifier != null) {
-                result.setClassifier(classifier);
-            }
-            return result;
-        }
-
-        public DependableCoordinate asDependableCoordinate() {
-            final DefaultDependableCoordinate result = new DefaultDependableCoordinate();
-            result.setGroupId(groupId);
-            result.setArtifactId(artifactId);
-            result.setVersion(version);
-            result.setType("test-jar");
-            result.setClassifier("tests");
-            return result;
-        }
-
-        public String getGroupId() {
-            return groupId;
-        }
-
-        public void setGroupId(String groupId) {
-            this.groupId = groupId;
-        }
-
-        public String getArtifactId() {
-            return artifactId;
-        }
-
-        public void setArtifactId(String artifactId) {
-            this.artifactId = artifactId;
-        }
-
-        public String getVersion() {
-            return version;
-        }
-
-        public void setVersion(String version) {
-            this.version = version;
-        }
-
-        @Override
-        public String toString() {
-            return groupId + ":" + artifactId + ":" + version;
         }
     }
 
