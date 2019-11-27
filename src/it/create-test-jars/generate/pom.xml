@@ -30,6 +30,7 @@
       <groupId>org.l2x6.rpkgtests.create-test-jars</groupId>
       <artifactId>create-test-jars</artifactId>
       <version>${project.version}</version>
+      <type>xml</type>
     </dependency>
   </dependencies>
 
@@ -49,9 +50,13 @@
                 </goals>
                 <phase>pre-integration-test</phase>
                 <configuration>
-                  <testJarFiles>
-                      <testJarFile>${basedir}/../create/test-jars.xml</testJarFile>
-                  </testJarFiles>
+                  <testJarXmls>
+                    <testJarXml>
+                      <groupId>org.l2x6.rpkgtests.create-test-jars</groupId>
+                      <artifactId>create-test-jars</artifactId>
+                      <version>${project.version}</version>
+                    </testJarXml>
+                  </testJarXmls>
                   <testModulesParentDir>../run-tests</testModulesParentDir>
                   <testModuleArtifactIdReplacers>/(.*)/$1-run/</testModuleArtifactIdReplacers>
                   <testModuleDirReplacers>/create-test-jars-//</testModuleDirReplacers>

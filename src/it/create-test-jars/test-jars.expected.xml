@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<testJars>
-    <testJar>
+<testArtifacts>
+    <testArtifact>
         <groupId>org.l2x6.rpkgtests.create-test-jars</groupId>
         <artifactId>create-test-jars-testable-1</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
-    </testJar>
-    <testJar>
+    </testArtifact>
+    <testArtifact>
         <groupId>org.l2x6.rpkgtests.create-test-jars</groupId>
         <artifactId>create-test-jars-testable-2</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
-    </testJar>
-</testJars>
+    </testArtifact>
+</testArtifacts>

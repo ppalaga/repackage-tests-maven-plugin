@@ -106,7 +106,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractTestJarsConsumerMoj
         if (skip) {
             getLog().info("Skipping as requested via the skip mojo parameter");
         }
-        for (TestJar artifact : getTestJarsOrFail()) {
+        for (Gav artifact : getTestJarsOrFail()) {
             final LocalRepoArtifact localRepoArtifact = createLocalRepoArtifact(artifact);
             final boolean installed = localRepoArtifact.installed;
             final boolean isSnapshot = artifact.version.endsWith("-SNAPSHOT");
@@ -124,7 +124,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractTestJarsConsumerMoj
         }
     }
 
-    private LocalRepoArtifact createLocalRepoArtifact(TestJar artifact) {
+    private LocalRepoArtifact createLocalRepoArtifact(Gav artifact) {
         final ProjectBuildingRequest request = session.getProjectBuildingRequest();
         final Path repoRoot = repositoryManager.getLocalRepositoryBasedir(request).toPath();
 
@@ -184,7 +184,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractTestJarsConsumerMoj
     }
 
     private InstallableArtifact transform(LocalRepoArtifact localRepoArtifact) {
-        final TestJar artifact = localRepoArtifact.artifact;
+        final Gav artifact = localRepoArtifact.artifact;
 
         try {
             final Transformer t = TransformerFactory.newInstance().newTransformer();
@@ -291,7 +291,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractTestJarsConsumerMoj
 
     public static class LocalRepoArtifact {
 
-        private final TestJar artifact;
+        private final Gav artifact;
         private final boolean installed;
         private final Path newLocalRepoJarPath;
         private final Path newLocalRepoPomPath;
@@ -299,7 +299,7 @@ public class RepackageAndInstallTestJarsMojo extends AbstractTestJarsConsumerMoj
         private final Path oldLocalRepoPomPath;
         private final String newArtifactId;
 
-        public LocalRepoArtifact(TestJar artifact, String newArtifactId, boolean installed, Path newLocalRepoJarPath,
+        public LocalRepoArtifact(Gav artifact, String newArtifactId, boolean installed, Path newLocalRepoJarPath,
                 Path newLocalRepoPomPath, Path oldLocalRepoJarPath, Path oldLocalRepoPomPath) {
             super();
             this.artifact = artifact;
