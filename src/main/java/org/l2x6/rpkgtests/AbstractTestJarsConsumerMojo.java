@@ -29,11 +29,19 @@ import java.util.TreeSet;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 public abstract class AbstractTestJarsConsumerMojo extends AbstractMojo {
     /**
-     * A collection of {@link TestJar}s representing test-jars which should be processed by this mojo.
+     * A collection of {@link Gav}s representing test-jars which should be processed by this mojo.
      * <p>
      * An example:
      *
@@ -54,10 +62,30 @@ public abstract class AbstractTestJarsConsumerMojo extends AbstractMojo {
      * </pre>
      */
     @Parameter(property = "rpkgtests.testJars")
-    protected List<TestJar> testJars;
+    protected List<Gav> testJars;
 
-    @Parameter(property = "rpkgtests.testJarFiles")
-    protected List<String> testJarFiles;
+    /**
+     * A list of GAV coordinates pointing at XML files produced by the {@code create-test-jars-file} mojo.
+     * <p>
+     * An example:
+     *
+     * <pre>
+     * {@code
+     * <testJarXmls>
+     *   <testJarXml>
+     *     <groupId>org.myorg</groupId>
+     *     <artifactId>my-artifact</artifactId>
+     *     <version>1.2.3</version>
+     *     <!-- <type>xml</type> is implicit -->
+     *   </testJarXml>
+     * </testJarXmls>
+     * }
+     * </pre>
+     *
+     * @since 0.5.0
+     */
+    @Parameter(property = "rpkgtests.testJarXmls")
+    protected List<Gav> testJarXmls;
 
     /**
      * The encoding to use when writing the {@code test-jars.xml} file.
@@ -69,6 +97,15 @@ public abstract class AbstractTestJarsConsumerMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project.basedir}", readonly = true)
     protected Path baseDir;
+
+    @Component
+    private RepositorySystem repoSystem;
+
+    @Parameter(defaultValue = "${repositorySystemSession}", readonly = true, required = true)
+    private RepositorySystemSession repoSession;
+
+    @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true, required = true)
+    private List<RemoteRepository> repositories;
 
     private Charset charset;
 
@@ -83,29 +120,39 @@ public abstract class AbstractTestJarsConsumerMojo extends AbstractMojo {
         this.baseDir = baseDir.toPath();
     }
 
-    protected Set<TestJar> getTestJarsOrFail() throws MojoFailureException {
-        Set<TestJar> result = getTestJars();
+    protected Set<Gav> getTestJarsOrFail() throws MojoFailureException {
+        Set<Gav> result = getTestJars();
         if (result.isEmpty()) {
-            throw new MojoFailureException("No testJars found. Please check testJars and testJarFiles configuration options");
+            throw new MojoFailureException("No testJars found. Please check testJars and testJarArtifacts configuration options");
         }
         return result;
     }
 
-    protected Set<TestJar> getTestJars() {
+    protected Set<Gav> getTestJars() {
 
-        final Set<TestJar> result = new TreeSet<TestJar>();
+        final Set<Gav> result = new TreeSet<Gav>();
         if (testJars != null && !testJars.isEmpty()) {
             result.addAll(testJars);
         }
-        for (String testJar : testJarFiles) {
-            final Path resolved = baseDir.resolve(testJar);
-            if (Files.isRegularFile(resolved)) {
-                try (Reader reader = Files.newBufferedReader(resolved, getCharset())) {
-                    final TestJars tj = TestJars.read(reader, resolved.toString());
-                    result.addAll(tj.getTestJars());
+        for (Gav testJarXml : testJarXmls) {
+
+            final Artifact aetherArtifact = testJarXml.asAetherArtifact("xml", null);
+
+            final ArtifactRequest req = new ArtifactRequest().setRepositories(this.repositories).setArtifact(aetherArtifact);
+            try {
+                final ArtifactResult resolutionResult = repoSystem.resolveArtifact(this.repoSession, req);
+
+                final Path testJarsPath = resolutionResult.getArtifact().getFile().toPath();
+                try (Reader reader = Files.newBufferedReader(testJarsPath, getCharset())) {
+                    final Gas tj = Gas.read(reader, testJarsPath.toString());
+                    tj.getGas().stream()
+                        .map(ga -> ga.toGav(testJarXml.getVersion()))
+                        .forEach(result::add);
                 } catch (IOException e) {
-                    throw new RuntimeException("Could not read from " + resolved);
+                    throw new RuntimeException("Could not read from " + testJarsPath);
                 }
+            } catch (ArtifactResolutionException e) {
+                throw new RuntimeException("Could not resolve " + aetherArtifact, e);
             }
         }
         return result;

@@ -47,19 +47,19 @@ import org.apache.maven.shared.model.fileset.util.FileSetManager;
  * Create the list of test jar artifacts in the XML format, something like
  *
  * <pre>
- * &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
- * &lt;testJars&gt;
- *     &lt;testJar&gt;
- *         &lt;groupId&gt;org.l2x6.rpkgtests.create-test-jars&lt;/groupId&gt;
- *         &lt;artifactId&gt;create-test-jars-testable-1&lt;/artifactId&gt;
- *         &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
- *     &lt;/testJar&gt;
- *     &lt;testJar&gt;
- *         &lt;groupId&gt;org.l2x6.rpkgtests.create-test-jars&lt;/groupId&gt;
- *         &lt;artifactId&gt;create-test-jars-testable-2&lt;/artifactId&gt;
- *         &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
- *     &lt;/testJar&gt;
- * &lt;/testJars&gt;
+ * {@code
+ * <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+ * <testArtifacts>
+ *     <testArtifact>
+ *         <groupId>org.l2x6.rpkgtests.create-test-jars</groupId>
+ *         <artifactId>create-test-jars-testable-1</artifactId>
+ *     </testArtifact>
+ *     <testArtifact>
+ *         <groupId>org.l2x6.rpkgtests.create-test-jars</groupId>
+ *         <artifactId>create-test-jars-testable-2</artifactId>
+ *     </testArtifact>
+ * </testArtifacts>
+ * }
  * </pre>
  *
  * @author <a href="https://github.com/ppalaga">Peter Palaga</a>
@@ -73,7 +73,7 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
      *
      * @since 0.4.0
      */
-    @Parameter(property = "rpkgtests.testJarsPath", defaultValue = "${project.build.directory}/test-jars.xml")
+    @Parameter(property = "rpkgtests.testJarsPath", defaultValue = "${project.build.directory}/${project.artifactId}.xml")
     private File testJarsPath;
 
     /**
@@ -110,9 +110,9 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
                 pomPaths.add(dir.resolve(includedFile));
             }
         }
-        final List<TestJar> testJars = new ArrayList<>();
+        final List<Ga> gas = new ArrayList<>();
         for (Path pomPath : pomPaths) {
-            testJars.add(TestJar.read(pomPath, charset));
+            gas.add(Ga.read(pomPath, charset));
         }
 
         final Path outputPath = baseDir.toPath().resolve(testJarsPath.toPath());
@@ -122,12 +122,12 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
             throw new MojoExecutionException("Could not create " + outputPath.getParent(), e);
         }
         try (BufferedWriter w = Files.newBufferedWriter(outputPath, charset)) {
-            final JAXBContext ctx = JAXBContext.newInstance(TestJars.class, TestJar.class);
+            final JAXBContext ctx = JAXBContext.newInstance(Gas.class, Gav.class);
             final Marshaller m = ctx.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            m.marshal(new TestJars(testJars), w);
+            m.marshal(new Gas(gas), w);
         } catch (JAXBException e) {
-            throw new MojoExecutionException("Could not serialize testJars " + testJars, e);
+            throw new MojoExecutionException("Could not serialize testJars " + gas, e);
         } catch (IOException e) {
             throw new MojoExecutionException("Could not write to " + outputPath, e);
         }

@@ -27,35 +27,35 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement(name = "testJars")
+@XmlRootElement(name = "testArtifacts")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class TestJars {
+public class Gas {
 
-    public static TestJars read(Reader reader, String source) {
+    public static Gas read(Reader reader, String source) {
         try {
-            final JAXBContext ctx = JAXBContext.newInstance(TestJars.class, TestJar.class);
+            final JAXBContext ctx = JAXBContext.newInstance(Gas.class, Ga.class);
             final Unmarshaller um = ctx.createUnmarshaller();
-            return (TestJars) um.unmarshal(reader);
+            return (Gas) um.unmarshal(reader);
         } catch (JAXBException e) {
             throw new RuntimeException("Could not deserialize testJars from XML " + source, e);
         }
     }
 
-    @XmlElement(name = "testJar")
-    private List<TestJar> testJars;
+    @XmlElement(name = "testArtifact")
+    private List<Ga> gas;
 
-    public TestJars() {
+    public Gas() {
     }
 
-    public TestJars(List<TestJar> testJars) {
-        this.testJars = testJars;
+    public Gas(List<Ga> gavs) {
+        this.gas = gavs;
     }
 
-    public List<TestJar> getTestJars() {
-        return testJars;
+    public List<Ga> getGas() {
+        return gas;
     }
 
-    public void setTestJars(List<TestJar> employees) {
-        this.testJars = employees;
+    public void setGas(List<Ga> gas) {
+        this.gas = gas;
     }
 }

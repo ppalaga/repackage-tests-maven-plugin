@@ -145,13 +145,13 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        final Set<TestJar> testJars = getTestJarsOrFail();
+        final Set<Gav> gavs = getTestJarsOrFail();
 
         final Path testsParentPath = testModulesParentDir.resolve("pom.xml");
-        final TestJar parentPom = TestJar.read(testsParentPath, getCharset());
+        final Gav parentPom = Gav.read(testsParentPath, getCharset());
         final Replacers artifactIdReplacers = Replacers.parse(testModuleArtifactIdReplacers);
         final Replacers dirReplacers = Replacers.parse(testModuleDirReplacers);
-        final TestJar rpkgPom = TestJar.read(rpkgModulePomXmlPath, getCharset());
+        final Gav rpkgPom = Gav.read(rpkgModulePomXmlPath, getCharset());
 
         if (clean) {
             try (Stream<Path> files = Files.list(testModulesParentDir)) {
@@ -177,9 +177,9 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
         cfg.setTagSyntax(Configuration.SQUARE_BRACKET_TAG_SYNTAX);
 
         final List<String> modules = new ArrayList<String>();
-        for (TestJar testJar : testJars) {
-            final String artifactId = artifactIdReplacers.apply(testJar.getArtifactId());
-            final String dir = dirReplacers.apply(testJar.getArtifactId());
+        for (Gav gav : gavs) {
+            final String artifactId = artifactIdReplacers.apply(gav.getArtifactId());
+            final String dir = dirReplacers.apply(gav.getArtifactId());
             final Path moduleDir = testModulesParentDir.resolve(dir);
             modules.add(dir);
             try {
@@ -188,9 +188,9 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
                 throw new MojoExecutionException("Could not create " + moduleDir, e);
             }
             final Path pomXmlPath = moduleDir.resolve("pom.xml");
-            final TestJar runTestsModule = parentPom.withArtifactId(artifactId);
+            final Gav runTestsModule = parentPom.withArtifactId(artifactId);
 
-            final TemplateParams model = new TemplateParams(parentPom, "../pom.xml", runTestsModule, rpkgPom, testJar, testJars,
+            final TemplateParams model = new TemplateParams(parentPom, "../pom.xml", runTestsModule, rpkgPom, gav, gavs,
                     rpkgtestsPluginVersion);
             try {
                 evalTemplate(cfg, "run-tests-module-pom.xml", pomXmlPath, getCharset(), model);
@@ -199,7 +199,7 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
             }
         }
 
-        final TemplateParams model = new TemplateParams(parentPom, "../pom.xml", null, rpkgPom, null, testJars, rpkgtestsPluginVersion);
+        final TemplateParams model = new TemplateParams(parentPom, "../pom.xml", null, rpkgPom, null, gavs, rpkgtestsPluginVersion);
         try {
             evalTemplate(cfg, "rpkg-module-pom.xml", rpkgModulePomXmlPath, getCharset(), model);
         } catch (IOException | TemplateException e) {
@@ -314,26 +314,26 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
     }
 
     public static class TemplateParams {
-        final TestJar parent;
+        final Gav parent;
         final String parentRelativePath;
-        final TestJar runTestsModule;
-        final TestJar rpkgModule;
-        final TestJar testJar;
-        final Set<TestJar> testJars;
+        final Gav runTestsModule;
+        final Gav rpkgModule;
+        final Gav gav;
+        final Set<Gav> gavs;
         final String rpkgtestsPluginVersion;
 
-        public TemplateParams(TestJar parent, String parentRelativePath, TestJar runTestsModule,
-                TestJar rpkgModule, TestJar testJar, Set<TestJar> testJars, String rpkgtestsPluginVersion) {
+        public TemplateParams(Gav parent, String parentRelativePath, Gav runTestsModule,
+                Gav rpkgModule, Gav gav, Set<Gav> gavs, String rpkgtestsPluginVersion) {
             this.parent = parent;
             this.parentRelativePath = parentRelativePath;
             this.runTestsModule = runTestsModule;
             this.rpkgModule = rpkgModule;
-            this.testJar= testJar;
-            this.testJars = testJars;
+            this.gav= gav;
+            this.gavs = gavs;
             this.rpkgtestsPluginVersion = rpkgtestsPluginVersion;
         }
 
-        public TestJar getParent() {
+        public Gav getParent() {
             return parent;
         }
 
@@ -341,20 +341,20 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
             return parentRelativePath;
         }
 
-        public TestJar getRunTestsModule() {
+        public Gav getRunTestsModule() {
             return runTestsModule;
         }
 
-        public TestJar getRpkgModule() {
+        public Gav getRpkgModule() {
             return rpkgModule;
         }
 
-        public TestJar getTestJar() {
-            return testJar;
+        public Gav getTestJar() {
+            return gav;
         }
 
-        public Set<TestJar> getTestJars() {
-            return testJars;
+        public Set<Gav> getTestJars() {
+            return gavs;
         }
 
         public String getRpkgtestsPluginVersion() {
