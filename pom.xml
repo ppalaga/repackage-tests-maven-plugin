@@ -77,6 +77,8 @@
   <properties>
 
     <!-- Dependency versions in alphabectic order -->
+    <version.com.sun.xml.bind>2.3.0</version.com.sun.xml.bind>
+    <version.javax.activation>1.2.0</version.javax.activation>
     <version.junit>4.12</version.junit>
     <version.org.apache.maven>3.3.9</version.org.apache.maven>
     <version.org.apache.maven.maven-project>3.0-alpha-2</version.org.apache.maven.maven-project>
@@ -108,7 +110,7 @@
     <version.maven-scm-plugin>1.9.4</version.maven-scm-plugin>
     <version.maven-site-plugin>3.6</version.maven-site-plugin>
     <version.maven-source-plugin>2.4</version.maven-source-plugin>
-    <version.maven-surefire-plugin>2.20.1</version.maven-surefire-plugin>
+    <version.maven-surefire-plugin>3.0.0-M4</version.maven-surefire-plugin>
     <version.nexus-staging-maven-plugin>1.6.8</version.nexus-staging-maven-plugin>
     <version.org.codehaus.buildnumber-maven-plugin>1.4</version.org.codehaus.buildnumber-maven-plugin>
     <version.mrm-maven-plugin>1.0.0</version.mrm-maven-plugin>
@@ -159,6 +161,28 @@
 
   <dependencyManagement>
     <dependencies>
+
+      <dependency>
+          <groupId>com.sun.activation</groupId>
+          <artifactId>javax.activation</artifactId>
+          <version>${version.javax.activation}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>javax.xml.bind</groupId>
+        <artifactId>jaxb-api</artifactId>
+        <version>${version.com.sun.xml.bind}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sun.xml.bind</groupId>
+        <artifactId>jaxb-core</artifactId>
+        <version>${version.com.sun.xml.bind}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sun.xml.bind</groupId>
+        <artifactId>jaxb-impl</artifactId>
+        <version>${version.com.sun.xml.bind}</version>
+      </dependency>
 
       <dependency>
         <groupId>junit</groupId>
@@ -230,6 +254,24 @@
   </dependencyManagement>
 
   <dependencies>
+
+    <dependency>
+      <groupId>com.sun.activation</groupId>
+      <artifactId>javax.activation</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.xml.bind</groupId>
+      <artifactId>jaxb-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.xml.bind</groupId>
+      <artifactId>jaxb-impl</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>junit</groupId>
