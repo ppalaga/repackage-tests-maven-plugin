@@ -26,6 +26,10 @@
 
   <properties>
     <rpkgtests-maven-plugin.version>@pom.version@</rpkgtests-maven-plugin.version>
+
+    <!-- maven-compiler-plugin -->
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
 
   <modules>
