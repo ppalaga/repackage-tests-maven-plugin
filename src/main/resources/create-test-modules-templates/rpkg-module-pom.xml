@@ -11,13 +11,14 @@
     </parent>
 
     <artifactId>[=rpkgModule.artifactId]</artifactId>
+    <packaging>pom</packaging>
 
     <dependencies>
 [#list testJars as testJar]
         <dependency>
             <groupId>[=testJar.groupId]</groupId>
             <artifactId>[=testJar.artifactId]</artifactId>
-            <version>[=testJar.version]</version>
+            <version>[=testJar.versionPlaceholder]</version>
         </dependency>
 [/#list]
     </dependencies>
@@ -41,7 +42,7 @@
                                 <testJar>
                                     <groupId>[=testJar.groupId]</groupId>
                                     <artifactId>[=testJar.artifactId]</artifactId>
-                                    <version>[=testJar.version]</version>
+                                    <version>[=testJar.versionPlaceholder]</version>
                                 </testJar>
 [/#list]
                             </testJars>

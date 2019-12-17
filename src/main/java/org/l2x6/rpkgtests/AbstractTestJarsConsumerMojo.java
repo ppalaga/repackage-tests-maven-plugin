@@ -146,7 +146,7 @@ public abstract class AbstractTestJarsConsumerMojo extends AbstractMojo {
                 try (Reader reader = Files.newBufferedReader(testJarsPath, getCharset())) {
                     final Gas tj = Gas.read(reader, testJarsPath.toString());
                     tj.getGas().stream()
-                        .map(ga -> ga.toGav(testJarXml.getVersion()))
+                        .map(ga -> ga.toGav(testJarXml.getVersionPlaceholder()))
                         .forEach(result::add);
                 } catch (IOException e) {
                     throw new RuntimeException("Could not read from " + testJarsPath);
