@@ -58,10 +58,10 @@
                     </testJarXml>
                   </testJarXmls>
                   <testModulesParentDir>../run-tests</testModulesParentDir>
-                  <testModuleArtifactIdReplacers>/(.*)/$1-run/</testModuleArtifactIdReplacers>
+                  <testModuleArtifactIdReplacers>/^.*$/$0-run/</testModuleArtifactIdReplacers>
                   <testModuleDirReplacers>/create-test-jars-//</testModuleDirReplacers>
                   <rpkgModulePomXmlPath>../run-tests/rpkgtests/pom.xml</rpkgModulePomXmlPath>
-                  <rpkgtestsPluginVersion>${rpkgtests-maven-plugin.version}</rpkgtestsPluginVersion>
+                  <rpkgtestsPluginVersion>@{rpkgtests-maven-plugin.version}</rpkgtestsPluginVersion>
                 </configuration>
               </execution>
             </executions>

@@ -136,7 +136,9 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
     private Path rpkgModulePomXmlPath;
 
     /**
-     * The version of the {@code rpkgtests-maven-plugin} to use in the generated {@link #rpkgModulePomXmlPath}.
+     * The version of the {@code rpkgtests-maven-plugin} to use in the generated {@link #rpkgModulePomXmlPath}. To
+     * generate a Maven placeholder use <code>@</code> instead of <code>$</code> - e.g.
+     * <pre>{@code <rpkgtestsPluginVersion>@{my-version}</rpkgtestsPluginVersion>}</pre>
      *
      * @since 0.4.0
      */
@@ -152,6 +154,7 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
         final Replacers artifactIdReplacers = Replacers.parse(testModuleArtifactIdReplacers);
         final Replacers dirReplacers = Replacers.parse(testModuleDirReplacers);
         final Gav rpkgPom = Gav.read(rpkgModulePomXmlPath, getCharset());
+        final String effectiveRpkgtestsPluginVersion = RpkgUtils.unescapePlaceholder(rpkgtestsPluginVersion);
 
         if (clean) {
             try (Stream<Path> files = Files.list(testModulesParentDir)) {
@@ -191,7 +194,7 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
             final Gav runTestsModule = parentPom.withArtifactId(artifactId);
 
             final TemplateParams model = new TemplateParams(parentPom, "../pom.xml", runTestsModule, rpkgPom, gav, gavs,
-                    rpkgtestsPluginVersion);
+                    effectiveRpkgtestsPluginVersion);
             try {
                 evalTemplate(cfg, "run-tests-module-pom.xml", pomXmlPath, getCharset(), model);
             } catch (IOException | TemplateException e) {
@@ -199,7 +202,7 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
             }
         }
 
-        final TemplateParams model = new TemplateParams(parentPom, "../pom.xml", null, rpkgPom, null, gavs, rpkgtestsPluginVersion);
+        final TemplateParams model = new TemplateParams(parentPom, "../pom.xml", null, rpkgPom, null, gavs, effectiveRpkgtestsPluginVersion);
         try {
             evalTemplate(cfg, "rpkg-module-pom.xml", rpkgModulePomXmlPath, getCharset(), model);
         } catch (IOException | TemplateException e) {

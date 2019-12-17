@@ -33,9 +33,11 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 
 public class Gav implements Comparable<Gav> {
+
     String groupId;
     String artifactId;
     String version;
+    String versionPlaceholder;
 
     public Gav() {
     }
@@ -44,6 +46,14 @@ public class Gav implements Comparable<Gav> {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
+        this.versionPlaceholder = version;
+    }
+
+    public Gav(String groupId, String artifactId, String version, String versionPlaceholder) {
+        this.groupId = groupId;
+        this.artifactId = artifactId;
+        this.version = version;
+        this.versionPlaceholder = RpkgUtils.unescapePlaceholder(versionPlaceholder);
     }
 
     public ArtifactCoordinate asArtifactCoordinate(String artifactId, String type, String classifier) {
@@ -98,6 +108,14 @@ public class Gav implements Comparable<Gav> {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public String getVersionPlaceholder() {
+        return versionPlaceholder == null ? version : versionPlaceholder;
+    }
+
+    public void setVersionPlaceholder(String versionPlaceholder) {
+        this.versionPlaceholder = RpkgUtils.unescapePlaceholder(versionPlaceholder);
     }
 
     @Override

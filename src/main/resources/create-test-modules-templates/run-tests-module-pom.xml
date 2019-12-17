@@ -10,7 +10,7 @@
         <relativePath>[=parentRelativePath]</relativePath>
     </parent>
 
-    <artifactId>[=testJar.artifactId]-run</artifactId>
+    <artifactId>[=runTestsModule.artifactId]</artifactId>
 
     <dependencies>
         <dependency>
