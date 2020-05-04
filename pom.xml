@@ -86,6 +86,7 @@
     <version.org.apache.maven.shared.maven-artifact-transfer>0.11.0</version.org.apache.maven.shared.maven-artifact-transfer>
     <version.org.apache.maven.shared.file-management>3.0.0</version.org.apache.maven.shared.file-management>
     <version.org.codehaus.plexus.plexus-utils>3.0.17</version.org.codehaus.plexus.plexus-utils>
+    <version.org.ec4j.core>0.2.1</version.org.ec4j.core>
     <version.org.freemarker>2.3.28</version.org.freemarker>
     <version.org.slf4j>1.7.5</version.org.slf4j>
 
@@ -366,6 +367,17 @@ limitations under the License.</inlineHeader>
         </plugin>
 
         <plugin>
+          <groupId>net.revelc.code.formatter</groupId>
+          <artifactId>formatter-maven-plugin</artifactId>
+          <version>${version.formatter-maven-plugin}</version>
+        </plugin>
+        <plugin>
+          <groupId>net.revelc.code</groupId>
+          <artifactId>impsort-maven-plugin</artifactId>
+          <version>${version.impsort-maven-plugin}</version>
+        </plugin>
+
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-clean-plugin</artifactId>
           <version>${version.maven-clean-plugin}</version>
@@ -559,6 +571,50 @@ limitations under the License.</inlineHeader>
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>net.revelc.code.formatter</groupId>
+        <artifactId>formatter-maven-plugin</artifactId>
+        <configuration>
+          <configFile>eclipse-format.xml</configFile>
+          <skip>${format.skip}</skip>
+        </configuration>
+        <executions>
+          <execution>
+            <id>format-java</id>
+            <goals>
+              <goal>format</goal>
+            </goals>
+            <phase>process-sources</phase>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.ec4j.core</groupId>
+            <artifactId>ec4j-core-build</artifactId>
+            <version>${version.org.ec4j.core}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <plugin>
+        <groupId>net.revelc.code</groupId>
+        <artifactId>impsort-maven-plugin</artifactId>
+        <configuration>
+          <groups>java.,javax.</groups>
+          <skip>${format.skip}</skip>
+          <removeUnused>true</removeUnused>
+        </configuration>
+        <executions>
+          <execution>
+            <id>sort-imports</id>
+            <goals>
+              <goal>sort</goal>
+            </goals>
+            <phase>process-sources</phase>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
