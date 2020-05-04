@@ -32,14 +32,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.codehaus.plexus.util.FileUtils;
-
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.cache.FileTemplateLoader;
 import freemarker.cache.MultiTemplateLoader;
@@ -48,6 +40,13 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.codehaus.plexus.util.FileUtils;
 
 /**
  * Generates modules necessary to run repackaged tests.
@@ -138,7 +137,10 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
     /**
      * The version of the {@code rpkgtests-maven-plugin} to use in the generated {@link #rpkgModulePomXmlPath}. To
      * generate a Maven placeholder use <code>@</code> instead of <code>$</code> - e.g.
-     * <pre>{@code <rpkgtestsPluginVersion>@{my-version}</rpkgtestsPluginVersion>}</pre>
+     * 
+     * <pre>
+     * {@code <rpkgtestsPluginVersion>@{my-version}</rpkgtestsPluginVersion>}
+     * </pre>
      *
      * @since 0.4.0
      */
@@ -202,7 +204,8 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
             }
         }
 
-        final TemplateParams model = new TemplateParams(parentPom, "../pom.xml", null, rpkgPom, null, gavs, effectiveRpkgtestsPluginVersion);
+        final TemplateParams model = new TemplateParams(parentPom, "../pom.xml", null, rpkgPom, null, gavs,
+                effectiveRpkgtestsPluginVersion);
         try {
             evalTemplate(cfg, "rpkg-module-pom.xml", rpkgModulePomXmlPath, getCharset(), model);
         } catch (IOException | TemplateException e) {
@@ -228,18 +231,19 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
         if (insertPos < 0) {
             insertPos = result.indexOf("<modules>");
             if (insertPos < 0) {
-                final int endProjectPos =  result.lastIndexOf("</project>");
-                if (endProjectPos >= 0)  {
+                final int endProjectPos = result.lastIndexOf("</project>");
+                if (endProjectPos >= 0) {
                     result.insert(endProjectPos, indent + "<modules>" + eol + indent + indent + MANAGED_MODULES_START + eol
                             + indent + indent + MANAGED_MODULES_END + eol + indent + "</modules>" + eol);
                     insertPos = result.indexOf(MANAGED_MODULES_START);
                 } else {
-                    throw new IllegalStateException("Could not find </project> in "+ path);
+                    throw new IllegalStateException("Could not find </project> in " + path);
                 }
             } else {
                 insertPos += "<modules>".length();
                 insertPos = consumeEol(result, insertPos);
-                result.insert(insertPos, indent + indent + MANAGED_MODULES_START + eol + indent + indent + MANAGED_MODULES_END + eol);
+                result.insert(insertPos,
+                        indent + indent + MANAGED_MODULES_START + eol + indent + indent + MANAGED_MODULES_END + eol);
                 insertPos = result.indexOf(MANAGED_MODULES_START);
             }
         }
@@ -258,12 +262,12 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
     private static int consumeEol(StringBuilder result, int insertPos) {
         while (insertPos < result.length()) {
             switch (result.charAt(insertPos)) {
-            case '\r':
-            case '\n':
-                insertPos++;
-                break;
-            default:
-                return insertPos;
+                case '\r':
+                case '\n':
+                    insertPos++;
+                    break;
+                default:
+                    return insertPos;
             }
         }
         return insertPos;
@@ -331,7 +335,7 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
             this.parentRelativePath = parentRelativePath;
             this.runTestsModule = runTestsModule;
             this.rpkgModule = rpkgModule;
-            this.gav= gav;
+            this.gav = gav;
             this.gavs = gavs;
             this.rpkgtestsPluginVersion = rpkgtestsPluginVersion;
         }
@@ -391,13 +395,12 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
 
         static class Replacer {
 
-
             public static Replacer parse(String rawReplacer) {
                 if (!rawReplacer.startsWith("/")) {
-                    throw new IllegalArgumentException("Replacer must start with a slash; found "+ rawReplacer);
+                    throw new IllegalArgumentException("Replacer must start with a slash; found " + rawReplacer);
                 }
                 if (!rawReplacer.endsWith("/")) {
-                    throw new IllegalArgumentException("Replacer must end with a slash; found "+ rawReplacer);
+                    throw new IllegalArgumentException("Replacer must end with a slash; found " + rawReplacer);
                 }
                 final String trimmed = rawReplacer.substring(1, rawReplacer.length() - 1);
                 final int slashPos = trimmed.indexOf('/');

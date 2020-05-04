@@ -112,10 +112,10 @@ public class RepackageAndInstallTestJarsMojo extends AbstractTestJarsConsumerMoj
             final boolean isSnapshot = artifact.version.endsWith("-SNAPSHOT");
             final boolean performRpkg = force || !installed || isSnapshot;
             getLog()
-                .info("force = " + force + "; " + localRepoArtifact.artifact
-                      + (installed ? " installed;" : " not installed;")
-                      + (isSnapshot ? " is SNAPSHOT;" : " is not SNAPSHOT;")
-                      + (performRpkg ? " thus repackaging" : " thus skipping the repackaging"));
+                    .info("force = " + force + "; " + localRepoArtifact.artifact
+                            + (installed ? " installed;" : " not installed;")
+                            + (isSnapshot ? " is SNAPSHOT;" : " is not SNAPSHOT;")
+                            + (performRpkg ? " thus repackaging" : " thus skipping the repackaging"));
             if (performRpkg) {
                 download(localRepoArtifact);
                 final InstallableArtifact installable = transform(localRepoArtifact);
@@ -146,7 +146,8 @@ public class RepackageAndInstallTestJarsMojo extends AbstractTestJarsConsumerMoj
     private void install(InstallableArtifact installable) throws MojoExecutionException {
         try {
             Files.createDirectories(installable.local.newLocalRepoJarPath.getParent());
-            Files.copy(installable.local.oldLocalRepoJarPath, installable.local.newLocalRepoJarPath, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(installable.local.oldLocalRepoJarPath, installable.local.newLocalRepoJarPath,
+                    StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException("Could not copy from " + installable.local.oldLocalRepoJarPath + " to "
                     + installable.local.newLocalRepoJarPath, e);
