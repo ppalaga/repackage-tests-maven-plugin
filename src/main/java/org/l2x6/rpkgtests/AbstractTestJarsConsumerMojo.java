@@ -123,7 +123,8 @@ public abstract class AbstractTestJarsConsumerMojo extends AbstractMojo {
     protected Set<Gav> getTestJarsOrFail() throws MojoFailureException {
         Set<Gav> result = getTestJars();
         if (result.isEmpty()) {
-            throw new MojoFailureException("No testJars found. Please check testJars and testJarArtifacts configuration options");
+            throw new MojoFailureException(
+                    "No testJars found. Please check testJars and testJarArtifacts configuration options");
         }
         return result;
     }
@@ -146,8 +147,8 @@ public abstract class AbstractTestJarsConsumerMojo extends AbstractMojo {
                 try (Reader reader = Files.newBufferedReader(testJarsPath, getCharset())) {
                     final Gas tj = Gas.read(reader, testJarsPath.toString());
                     tj.getGas().stream()
-                        .map(ga -> ga.toGav(testJarXml.getVersionPlaceholder()))
-                        .forEach(result::add);
+                            .map(ga -> ga.toGav(testJarXml.getVersionPlaceholder()))
+                            .forEach(result::add);
                 } catch (IOException e) {
                     throw new RuntimeException("Could not read from " + testJarsPath);
                 }
