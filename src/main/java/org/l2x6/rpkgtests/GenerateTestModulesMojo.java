@@ -20,8 +20,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.nio.file.FileSystem;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,7 +51,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.codehaus.plexus.util.FileUtils;
 
 /**
  * Generates modules necessary to run repackaged tests.
@@ -137,7 +141,7 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
     /**
      * The version of the {@code rpkgtests-maven-plugin} to use in the generated {@link #rpkgModulePomXmlPath}. To
      * generate a Maven placeholder use <code>@</code> instead of <code>$</code> - e.g.
-     * 
+     *
      * <pre>
      * {@code <rpkgtestsPluginVersion>@{my-version}</rpkgtestsPluginVersion>}
      * </pre>
@@ -146,6 +150,24 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
      */
     @Parameter(property = "rpkgtests.rpkgtestsPluginVersion")
     private String rpkgtestsPluginVersion;
+
+    /**
+     * Glob resource patterns relative to {@link #testModulesParentDir} to include in the set of files to delete before
+     * generating all the modules anew. This option is effective only if {@link #clean} is {@code true}.
+     *
+     * @since 0.8.0
+     */
+    @Parameter(property = "rpkgtests.cleanIncludes", defaultValue = "**")
+    private List<String> cleanIncludes;
+
+    /**
+     * Glob resource patterns relative to {@link #testModulesParentDir} to exclude from the set of files to delete
+     * before generating all the modules anew. This option is effective only if {@link #clean} is {@code true}.
+     *
+     * @since 0.8.0
+     */
+    @Parameter(property = "rpkgtests.cleanExcludes", defaultValue = ".**,pom.xml")
+    private List<String> cleanExcludes;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -159,17 +181,47 @@ public class GenerateTestModulesMojo extends AbstractTestJarsConsumerMojo {
         final String effectiveRpkgtestsPluginVersion = RpkgUtils.unescapePlaceholder(rpkgtestsPluginVersion);
 
         if (clean) {
-            try (Stream<Path> files = Files.list(testModulesParentDir)) {
-                files
-                        .filter(Files::isDirectory)
-                        .filter(p -> Files.isRegularFile(p.resolve("pom.xml")))
-                        .forEach(p -> {
-                            try {
-                                FileUtils.deleteDirectory(p.toFile());
-                            } catch (IOException e) {
-                                throw new RuntimeException("Could not delete " + p, e);
-                            }
-                        });
+            final FileSystem fs = testsParentPath.getFileSystem();
+            final List<PathMatcher> compiledIncludes = cleanIncludes == null ? Collections.emptyList()
+                    : cleanIncludes.stream()
+                            .map(glob -> "glob:" + glob)
+                            .map(fs::getPathMatcher)
+                            .collect(Collectors.toList());
+            final List<PathMatcher> compiledExcludes = cleanExcludes == null ? Collections.emptyList()
+                    : cleanExcludes.stream()
+                            .map(glob -> "glob:" + glob)
+                            .map(fs::getPathMatcher)
+                            .collect(Collectors.toList());
+            try {
+                Files.walkFileTree(testModulesParentDir, new SimpleFileVisitor<Path>() {
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(
+                            Path dir, IOException exc) throws IOException {
+                        boolean hasChildren = false;
+                        try (Stream<Path> items = Files.list(dir)) {
+                            hasChildren = items.findFirst().isPresent();
+                        }
+                        if (!hasChildren) {
+                            Files.deleteIfExists(dir);
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(
+                            Path file, BasicFileAttributes attrs)
+                            throws IOException {
+                        final Path relative = testModulesParentDir.relativize(file);
+                        if (compiledIncludes.stream()
+                                .anyMatch(matcher -> matcher.matches(relative))
+                                && !compiledExcludes.stream()
+                                        .anyMatch(matcher -> matcher.matches(relative))) {
+                            Files.delete(file);
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
             } catch (IOException e) {
                 throw new RuntimeException("Could not walk " + testModulesParentDir, e);
             }

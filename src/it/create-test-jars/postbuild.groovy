@@ -39,7 +39,7 @@ assert new String(Files.readAllBytes(baseDir.resolve('run-tests/testable-2/targe
 void assertFilesEqual(Path baseDir, String expectedPath, String actualPath) {
     final String actual = new String(Files.readAllBytes(baseDir.resolve(actualPath)), 'UTF-8')
     final String expected = new String(Files.readAllBytes(baseDir.resolve(expectedPath)), 'UTF-8')
-    assert expected.equals(actual)
+    assert expected.equals(actual) : "" + expectedPath + " does not equal " + actualPath
 }
 
 void assertArtifactsExist(String key) {
