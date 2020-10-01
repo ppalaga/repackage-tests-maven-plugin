@@ -65,7 +65,7 @@ import org.apache.maven.shared.model.fileset.util.FileSetManager;
  * @author <a href="https://github.com/ppalaga">Peter Palaga</a>
  * @since 0.4.0
  */
-@Mojo(name = "create-test-jars-file", requiresDependencyResolution = ResolutionScope.NONE, defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
+@Mojo(name = "create-test-jars-file", requiresDependencyResolution = ResolutionScope.NONE, defaultPhase = LifecyclePhase.GENERATE_RESOURCES, threadSafe = true)
 public class CreateTestJarsXmlMojo extends AbstractMojo {
 
     /**
