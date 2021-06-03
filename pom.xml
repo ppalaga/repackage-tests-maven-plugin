@@ -77,7 +77,6 @@
   <properties>
 
     <!-- Dependency versions in alphabectic order -->
-    <version.com.sun.xml.bind>2.3.0</version.com.sun.xml.bind>
     <version.javax.activation>1.2.0</version.javax.activation>
     <version.junit>4.12</version.junit>
     <version.org.apache.maven>3.3.9</version.org.apache.maven>
@@ -88,6 +87,7 @@
     <version.org.codehaus.plexus.plexus-utils>3.0.17</version.org.codehaus.plexus.plexus-utils>
     <version.org.ec4j.core>0.2.1</version.org.ec4j.core>
     <version.org.freemarker>2.3.28</version.org.freemarker>
+    <version.org.glassfish.jaxb.jaxb-runtime>2.3.3-b02</version.org.glassfish.jaxb.jaxb-runtime>
     <version.org.slf4j>1.7.5</version.org.slf4j>
 
     <!-- Plugins and their dependencies -->
@@ -251,16 +251,9 @@
     </dependency>
 
     <dependency>
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.sun.xml.bind</groupId>
-      <artifactId>jaxb-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.sun.xml.bind</groupId>
-      <artifactId>jaxb-impl</artifactId>
+      <groupId>org.glassfish.jaxb</groupId>
+      <artifactId>jaxb-runtime</artifactId>
+      <version>${version.org.glassfish.jaxb.jaxb-runtime}</version>
     </dependency>
 
     <dependency>
