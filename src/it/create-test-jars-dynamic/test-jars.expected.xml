@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<testArtifacts>
+    <testArtifact>
+        <groupId>org.l2x6.rpkgtests.create-test-jars-dynamic</groupId>
+        <artifactId>create-test-jars-testable-1</artifactId>
+    </testArtifact>
+    <testArtifact>
+        <groupId>org.l2x6.rpkgtests.create-test-jars-dynamic</groupId>
+        <artifactId>create-test-jars-testable-3</artifactId>
+    </testArtifact>
+</testArtifacts>
