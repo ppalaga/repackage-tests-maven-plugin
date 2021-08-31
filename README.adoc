@@ -72,3 +72,43 @@ your module in which you'd like to run them can seamlessly use them as `test` sc
   </executions>
 </plugin>
 ----
+
+== Test Catalog XML
+To provide a way how to easily rerun the desired tests, the maven-plugin implements goal `create-test-jars-file`.
+This goal creates an xml catalog containing all the `groupId:artifacId` pairs as configured within the project.
+
+=== Configuration options
+*Static* - the included `groupId:artifactId` pairs are read from the filesystem based on provided configuration as:
+----
+<execution>
+  <id>create-test-jars</id>
+  <inherited>false</inherited>
+  <goals>
+    <goal>create-test-jars-file</goal>
+  </goals>
+  <configuration>
+    <testJarsPath>${project.basedir}/test-jars.xml</testJarsPath>
+    <fileSets>
+      <fileSet>
+        <directory>${basedir}/..</directory>
+        <includes>testable-*/pom.xml</includes>
+      </fileSet>
+    </fileSets>
+  </configuration>
+</execution>
+----
+*Dynamic* - the included `groupId:artifactId` pairs are dynamically collected from the maven reactor build,
+based on a predefined filtering property (if it's set to true, the module is collected):
+----
+<execution>
+  <id>create-test-jars</id>
+  <inherited>false</inherited>
+  <goals>
+    <goal>create-test-jars-file</goal>
+  </goals>
+  <configuration>
+    <testJarsPath>${project.build.directory}/test-jars.xml</testJarsPath>
+    <activatingPropertyName>rpkgtests-activating-property</activatingPropertyName>
+  </configuration>
+</execution>
+----

@@ -24,15 +24,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -40,6 +38,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 
@@ -96,24 +95,32 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
     @Parameter(property = "rpkgtests.encoding", defaultValue = "${project.build.sourceEncoding}")
     private String encoding;
 
+    /**
+     * Name of the property that decides if a maven project (or module) in current reactor
+     * is supposed to be included in the resulting test-jars file.
+     * <p/>
+     * The project is included if:
+     * <ul>
+     * <li>is part of build reactor</li>
+     * <li>defines (or inherits) a property of given name which has value 'true'</li>
+     * </ul>
+     * 
+     * @since 0.11.0
+     */
+    @Parameter(property = "rpkgtests.activatingPropertyName", defaultValue = "rpkgtests.activating.property")
+    private String activatingPropertyName;
+
+    @Parameter(defaultValue = "${session}")
+    private MavenSession mavenSession;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
         final Charset charset = encoding != null ? Charset.forName(encoding) : StandardCharsets.UTF_8;
 
-        final Set<Path> pomPaths = new TreeSet<>();
-        final FileSetManager fileSetManager = new FileSetManager();
-        for (FileSet fs : fileSets) {
-            final Path dir = Paths.get(fs.getDirectory());
-            final String[] includedFiles = fileSetManager.getIncludedFiles(fs);
-            for (String includedFile : includedFiles) {
-                pomPaths.add(dir.resolve(includedFile));
-            }
-        }
         final List<Ga> gas = new ArrayList<>();
-        for (Path pomPath : pomPaths) {
-            gas.add(Ga.read(pomPath, charset));
-        }
+        handleFileSets(charset, gas);
+        handleDynamic(gas);
 
         final Path outputPath = baseDir.toPath().resolve(testJarsPath.toPath());
         try {
@@ -132,6 +139,35 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
             throw new MojoExecutionException("Could not write to " + outputPath, e);
         }
 
+    }
+
+    private void handleFileSets(Charset charset, List<Ga> gas) {
+        final Set<Path> pomPaths = new TreeSet<>();
+        final FileSetManager fileSetManager = new FileSetManager();
+        for (FileSet fs : fileSets) {
+            final Path dir = Paths.get(fs.getDirectory());
+            final String[] includedFiles = fileSetManager.getIncludedFiles(fs);
+            for (String includedFile : includedFiles) {
+                pomPaths.add(dir.resolve(includedFile));
+            }
+        }
+        for (Path pomPath : pomPaths) {
+            gas.add(Ga.read(pomPath, charset));
+        }
+    }
+
+    private Boolean isModuleActivated(MavenProject project) {
+        Optional<String> optProperty = Optional
+                .ofNullable(project.getProperties().getProperty(activatingPropertyName));
+        return optProperty.map(Boolean::valueOf).orElse(false);
+    }
+
+    private void handleDynamic(List<Ga> gas) {
+        for (MavenProject project : mavenSession.getAllProjects()) {
+            if (isModuleActivated(project)) {
+                gas.add(new Ga(project.getGroupId(), project.getArtifactId()));
+            }
+        }
     }
 
 }
