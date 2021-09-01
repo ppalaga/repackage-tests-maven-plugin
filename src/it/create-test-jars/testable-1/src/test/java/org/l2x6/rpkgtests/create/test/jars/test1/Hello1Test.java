@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2019 Repackage Tests Maven Plugin
  * project contributors as indicated by the @author tags.
  *

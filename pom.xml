@@ -92,7 +92,7 @@
 
     <!-- Plugins and their dependencies -->
     <version.com.github.github.site-maven-plugin>0.12</version.com.github.github.site-maven-plugin>
-    <version.com.mycila.license-maven-plugin>3.0</version.com.mycila.license-maven-plugin>
+    <version.com.mycila.license-maven-plugin>4.1</version.com.mycila.license-maven-plugin>
     <version.formatter-maven-plugin>2.11.0</version.formatter-maven-plugin>
     <version.impsort-maven-plugin>1.3.2</version.impsort-maven-plugin>
     <version.maven-antrun-plugin>1.8</version.maven-antrun-plugin>
@@ -323,7 +323,7 @@
           <artifactId>license-maven-plugin</artifactId>
           <version>${version.com.mycila.license-maven-plugin}</version>
           <configuration>
-            <inlineHeader>Copyright (c) ${project.inceptionYear} Repackage Tests Maven Plugin
+            <inlineHeader>Copyright (c) ${license.git.copyrightCreationYear} Repackage Tests Maven Plugin
 project contributors as indicated by the @author tags.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -349,6 +349,9 @@ limitations under the License.</inlineHeader>
               <exclude>mvnw</exclude>
               <exclude>mvnw.cmd</exclude>
             </excludes>
+            <properties>
+              <license.git.copyrightLastYearMaxCommitsLookup>100</license.git.copyrightLastYearMaxCommitsLookup>
+            </properties>
           </configuration>
           <executions>
             <execution>
@@ -357,6 +360,13 @@ limitations under the License.</inlineHeader>
               </goals>
             </execution>
           </executions>
+          <dependencies>
+            <dependency>
+              <groupId>com.mycila</groupId>
+              <artifactId>license-maven-plugin-git</artifactId>
+              <version>${version.com.mycila.license-maven-plugin}</version>
+            </dependency>
+          </dependencies>
         </plugin>
 
         <plugin>
