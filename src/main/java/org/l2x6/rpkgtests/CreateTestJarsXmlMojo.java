@@ -110,6 +110,9 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
     @Parameter(property = "rpkgtests.activatingPropertyName", defaultValue = "rpkgtests.activating.property")
     private String activatingPropertyName;
 
+    @Parameter(property = "rpkgtests.includeVersion", defaultValue = "false")
+    private boolean includeVersion;
+
     @Parameter(defaultValue = "${session}")
     private MavenSession mavenSession;
 
@@ -133,6 +136,10 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
             final Marshaller m = ctx.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             m.marshal(new Gas(gas), w);
+            if (includeVersion) {
+                w.newLine();
+                w.write("<!-- " + mavenSession.getCurrentProject().getVersion() + "-->");
+            }
         } catch (JAXBException e) {
             throw new MojoExecutionException("Could not serialize testJars " + gas, e);
         } catch (IOException e) {
