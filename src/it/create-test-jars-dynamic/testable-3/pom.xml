@@ -1,6 +1,6 @@
 <!--
 
-    Copyright (c) 2021 Repackage Tests Maven Plugin
+    Copyright (c) 2022 Repackage Tests Maven Plugin
     project contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,7 @@
     <version>0.0.1-SNAPSHOT</version>
   </parent>
   <artifactId>create-test-jars-testable-3</artifactId>
+  <version>0.0.2-SNAPSHOT</version>
   <properties>
     <rpkgtests-activating-property>true</rpkgtests-activating-property>
   </properties>
@@ -33,7 +34,7 @@
     <dependency>
       <groupId>org.l2x6.rpkgtests.create-test-jars-dynamic</groupId>
       <artifactId>create-test-jars-lib</artifactId>
-      <version>${project.version}</version>
+      <version>0.0.1-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
 
