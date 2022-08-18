@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Repackage Tests Maven Plugin
+ * Copyright (c) 2019 Repackage Tests Maven Plugin
  * project contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
