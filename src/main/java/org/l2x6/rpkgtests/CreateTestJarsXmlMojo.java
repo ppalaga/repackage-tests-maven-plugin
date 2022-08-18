@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Repackage Tests Maven Plugin
+ * Copyright (c) 2022 Repackage Tests Maven Plugin
  * project contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -110,6 +110,9 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
     @Parameter(property = "rpkgtests.activatingPropertyName", defaultValue = "rpkgtests.activating.property")
     private String activatingPropertyName;
 
+    /**
+     * Include the version in the generated
+     */
     @Parameter(property = "rpkgtests.includeVersion", defaultValue = "false")
     private boolean includeVersion;
 
@@ -121,9 +124,9 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
 
         final Charset charset = encoding != null ? Charset.forName(encoding) : StandardCharsets.UTF_8;
 
-        final List<Ga> gas = new ArrayList<>();
-        handleFileSets(charset, gas);
-        handleDynamic(gas);
+        final List<Gav> gavs = new ArrayList<>();
+        handleFileSets(charset, gavs);
+        handleDynamic(gavs);
 
         final Path outputPath = baseDir.toPath().resolve(testJarsPath.toPath());
         try {
@@ -135,20 +138,16 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
             final JAXBContext ctx = JAXBContext.newInstance(Gas.class, Gav.class);
             final Marshaller m = ctx.createMarshaller();
             m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            m.marshal(new Gas(gas), w);
-            if (includeVersion) {
-                w.newLine();
-                w.write("<!-- " + mavenSession.getCurrentProject().getVersion() + "-->");
-            }
+            m.marshal(new Gas(gavs), w);
         } catch (JAXBException e) {
-            throw new MojoExecutionException("Could not serialize testJars " + gas, e);
+            throw new MojoExecutionException("Could not serialize testJars " + gavs, e);
         } catch (IOException e) {
             throw new MojoExecutionException("Could not write to " + outputPath, e);
         }
 
     }
 
-    private void handleFileSets(Charset charset, List<Ga> gas) {
+    private void handleFileSets(Charset charset, List<Gav> gavs) {
         final Set<Path> pomPaths = new TreeSet<>();
         final FileSetManager fileSetManager = new FileSetManager();
         for (FileSet fs : fileSets) {
@@ -159,7 +158,7 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
             }
         }
         for (Path pomPath : pomPaths) {
-            gas.add(Ga.read(pomPath, charset));
+            gavs.add(Gav.read(pomPath, charset));
         }
     }
 
@@ -169,10 +168,10 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
         return optProperty.map(Boolean::valueOf).orElse(false);
     }
 
-    private void handleDynamic(List<Ga> gas) {
+    private void handleDynamic(List<Gav> gavs) {
         for (MavenProject project : mavenSession.getAllProjects()) {
             if (isModuleActivated(project)) {
-                gas.add(new Ga(project.getGroupId(), project.getArtifactId()));
+                gavs.add(new Gav(project.getGroupId(), project.getArtifactId(), project.getVersion()));
             }
         }
     }

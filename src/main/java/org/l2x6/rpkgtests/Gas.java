@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Repackage Tests Maven Plugin
+ * Copyright (c) 2022 Repackage Tests Maven Plugin
  * project contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,20 +42,20 @@ public class Gas {
     }
 
     @XmlElement(name = "testArtifact")
-    private List<Ga> gas;
+    private List<Gav> gavs;
 
     public Gas() {
     }
 
-    public Gas(List<Ga> gavs) {
-        this.gas = gavs;
+    public Gas(List<Gav> gavs) {
+        this.gavs = gavs;
     }
 
-    public List<Ga> getGas() {
-        return gas;
+    public List<Gav> getGavs() {
+        return gavs;
     }
 
-    public void setGas(List<Ga> gas) {
-        this.gas = gas;
+    public void setGavs(List<Ga> gas) {
+        this.gavs = gavs;
     }
 }

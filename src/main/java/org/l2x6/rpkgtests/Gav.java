@@ -72,6 +72,10 @@ public class Gav implements Comparable<Gav> {
         return new Gav(groupId, artifactId, version);
     }
 
+    public Gav withVersion(String version) {
+        return new Gav(groupId, artifactId, version);
+    }
+
     public DependableCoordinate asDependableCoordinate() {
         final DefaultDependableCoordinate result = new DefaultDependableCoordinate();
         result.setGroupId(groupId);
