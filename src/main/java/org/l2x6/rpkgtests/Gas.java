@@ -33,7 +33,7 @@ public class Gas {
 
     public static Gas read(Reader reader, String source) {
         try {
-            final JAXBContext ctx = JAXBContext.newInstance(Gas.class, Ga.class);
+            final JAXBContext ctx = JAXBContext.newInstance(Gas.class, Gav.class);
             final Unmarshaller um = ctx.createUnmarshaller();
             return (Gas) um.unmarshal(reader);
         } catch (JAXBException e) {
@@ -55,7 +55,7 @@ public class Gas {
         return gavs;
     }
 
-    public void setGavs(List<Ga> gas) {
+    public void setGavs(List<Gav> gavs) {
         this.gavs = gavs;
     }
 }

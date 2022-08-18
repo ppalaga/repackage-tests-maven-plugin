@@ -110,12 +110,6 @@ public class CreateTestJarsXmlMojo extends AbstractMojo {
     @Parameter(property = "rpkgtests.activatingPropertyName", defaultValue = "rpkgtests.activating.property")
     private String activatingPropertyName;
 
-    /**
-     * Include the version in the generated
-     */
-    @Parameter(property = "rpkgtests.includeVersion", defaultValue = "false")
-    private boolean includeVersion;
-
     @Parameter(defaultValue = "${session}")
     private MavenSession mavenSession;
 

@@ -3,9 +3,11 @@
     <testArtifact>
         <groupId>org.l2x6.rpkgtests.create-test-jars-dynamic</groupId>
         <artifactId>create-test-jars-testable-1</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
     </testArtifact>
     <testArtifact>
         <groupId>org.l2x6.rpkgtests.create-test-jars-dynamic</groupId>
         <artifactId>create-test-jars-testable-3</artifactId>
+        <version>0.0.2-SNAPSHOT</version>
     </testArtifact>
 </testArtifacts>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Repackage Tests Maven Plugin
+ * Copyright (c) 2022 Repackage Tests Maven Plugin
  * project contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,11 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.shared.transfer.artifact.ArtifactCoordinate;
@@ -32,11 +37,15 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 
+@XmlRootElement(name = "testArtifact")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Gav implements Comparable<Gav> {
 
     String groupId;
     String artifactId;
     String version;
+
+    @XmlTransient
     String versionPlaceholder;
 
     public Gav() {
